@@ -1,8 +1,9 @@
+//tsconfig
 {
   "compilerOptions": {
     "target": "ES2020",
     "module": "nodenext",
-    "rootDir": "./src",
+    "rootDir": "api_gateway/src",
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
