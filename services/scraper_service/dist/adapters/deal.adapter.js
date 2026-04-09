@@ -1,0 +1,14 @@
+export const mapDominosDeals = (rawDeals) => {
+    return rawDeals.map(deal => ({
+        id: Number(deal.combo_id),
+        name: deal.name,
+        description: deal.description,
+        price: Number(deal.price),
+        salePrice: Number(deal.salePrice ?? 0),
+        image: deal.image,
+        category: deal.category || "Deals",
+        brandSlug: "dominos",
+        isActive: true,
+        publishedAt: new Date()
+    }));
+};

@@ -37,6 +37,7 @@ export class DominosScraper extends BaseScraper {
 
       const menuData = response.data?.menu?.menuData || [];
 
+      // group 11 is the deals group of the dominos menu.
       const dealsGroups = menuData.filter((item: any) => item.group_id === 11);
 
       const rawDeals = dealsGroups
