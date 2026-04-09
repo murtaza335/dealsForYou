@@ -3,6 +3,7 @@ import { BaseScraper } from "./base.scraper.js";
 import { mapDominosDeals } from "../adapters/deal.adapter.js";
 import { Deal } from "../interfaces/deal.interface.js";
 
+//we use the dominos api to get the menu data 
 const DOMINOS_IMAGE_BASE_URL = "https://www.dominos.com.pk/images/";
 
 const normalizeImageUrl = (imagePath: string | undefined): string => {
@@ -18,6 +19,7 @@ const normalizeImageUrl = (imagePath: string | undefined): string => {
   return `${cleanBase}${cleanPath}`;
 };
 
+// Dominos scraper implementation 
 export class DominosScraper extends BaseScraper {
   async fetchDeals(): Promise<Deal[]> {
     try {
@@ -35,6 +37,7 @@ export class DominosScraper extends BaseScraper {
         }
       );
 
+      //filter out the deals from the menu data and map it to our internal Deal structure
       const menuData = response.data?.menu?.menuData || [];
 
       // group 11 is the deals group of the dominos menu.
@@ -66,3 +69,5 @@ export class DominosScraper extends BaseScraper {
     }
   }
 }
+
+//dominos time check not required as if they deals are not active at that time they dont send that deal data the sent empty array and we have filter only those that have deals data otherwise deal will not be included in the final output

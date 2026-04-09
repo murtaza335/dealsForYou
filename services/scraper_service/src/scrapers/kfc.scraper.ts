@@ -5,7 +5,7 @@ import { mapKfcDeals } from "../adapters/deal.adapter.js";
 
 const KFC_API_URL = "https://www.kfcpakistan.com/api/menu/allGroups";
 
-// 🕒 Time check
+//  Time check as it also have midnight deal`s that are only available during night time so time check is required
 function isWithinServingHours(servingHours: string | null): boolean {
   if (!servingHours) return true;
 
