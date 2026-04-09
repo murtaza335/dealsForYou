@@ -4,7 +4,7 @@ import { BrandDocument, BrandModel } from "../models/brand.model.js";
 
 export class DealRepository {
 
-  // ✅ Create brand if not exists
+  //  Create brand if not exists
   async createOrGetBrand(data: {
     name: string;
     slug: string;
@@ -26,15 +26,15 @@ export class DealRepository {
     return brand;
   }
 
-  // ✅ Get brand by slug
+  //  Get brand by id(slug) using the brand name
   async getBrandBySlug(slug: string): Promise<BrandDocument | null> {
     return BrandModel.findOne({ slug });
   }
 
-  // ✅ MAIN SYNC LOGIC
+  //  MAIN SYNC LOGIC 
   async syncDealsForBrand(brandId: string, newDeals: Deal[]) {
 
-    // 1. Get existing deals from DB
+    // 1. Get existing deals from DB using brandid
     const existingDeals = await DealModel.find({ brandId });
 
     const existingMap = new Map(
@@ -53,14 +53,14 @@ export class DealRepository {
       const existing = existingMap.get(deal.id);
 
       if (!existing) {
-        // ➕ INSERT
+        //  INSERT
         await DealModel.create({
           ...deal,
           brandId
         });
         inserted++;
       } else {
-        // 🔄 UPDATE (only if changed)
+        //  UPDATE (only if changed)
         await DealModel.updateOne(
           { _id: existing._id },
           {
@@ -79,7 +79,7 @@ export class DealRepository {
       }
     }
 
-    // 3. DELETE (not in new scraper output)
+    // 3. DELETE (not in new scraper output) outdated deals will be deleted from the database
     const newIds = newDeals.map(d => d.id);
 
     const deleteResult = await DealModel.deleteMany({

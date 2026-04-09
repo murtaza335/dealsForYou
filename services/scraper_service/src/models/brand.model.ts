@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
+// our schema for the brand data that we will be storing in our database
 export interface BrandDocument extends Document<Types.ObjectId> {
   name: string;
   slug: string;

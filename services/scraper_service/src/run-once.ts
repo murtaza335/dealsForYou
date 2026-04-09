@@ -1,6 +1,7 @@
 import { connectDB } from "./config/db.js";
 import { ScraperService } from "./services/scraper.service.js";
 
+// just test file for running the scraper once
 const runOnce = async () => {
   await connectDB();
   const scraperService = new ScraperService();

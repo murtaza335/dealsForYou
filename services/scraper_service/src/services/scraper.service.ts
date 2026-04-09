@@ -5,6 +5,7 @@ import { DealRepository } from "../repositories/deal.repository.js";
 export class ScraperService {
   private repo = new DealRepository();
 
+  // we can easily add more scrapers here in the future by just adding them to this array with their brand info and scraper instance
   private scrapers = [
     {
       scraper: new DominosScraper(),
@@ -24,6 +25,7 @@ export class ScraperService {
     }
   ];
 
+  // this is the main function that will run all the scrapers and sync the data with the database one by one in a sequential manner but we can easily make it parallel in the future if needed by using Promise.all and making sure to handle the database operations properly to
   async run() {
     console.log("Starting all scrapers...");
 

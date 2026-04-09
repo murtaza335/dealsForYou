@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
+//our schema for the deal data that we will be storing in our database
 export interface DealDocument extends Document {
   id: number;
   name: string;
