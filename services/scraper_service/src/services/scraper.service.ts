@@ -1,30 +1,48 @@
 import { DominosScraper } from "../scrapers/dominos.scraper.js";
+import { KfcScraper } from "../scrapers/kfc.scraper.js";
 import { DealRepository } from "../repositories/deal.repository.js";
 
 export class ScraperService {
   private repo = new DealRepository();
-  private dominos = new DominosScraper();
+
+  private scrapers = [
+    {
+      scraper: new DominosScraper(),
+      brand: {
+        name: "Dominos",
+        slug: "dominos",
+        imageBaseUrl: "https://www.dominos.com.pk/images/"
+      }
+    },
+    {
+      scraper: new KfcScraper(),
+      brand: {
+        name: "KFC",
+        slug: "kfc",
+        imageBaseUrl: "https://www.kfcpakistan.com/images/"
+      }
+    }
+  ];
 
   async run() {
-    console.log("Starting scraping process...");
+    console.log("Starting all scrapers...");
 
-    //  STEP 1: Ensure brand exists
-    const brand = await this.repo.createOrGetBrand({
-      name: "Dominos",
-      slug: "dominos",
-      imageBaseUrl: "https://www.dominos.com.pk/images/"
-    });
+    for (const s of this.scrapers) {
 
-    console.log(`Brand ready: ${brand.name}`);
+      console.log(`Running scraper for ${s.brand.slug}...`);
 
-    // STEP 2: Run scraper
-    const deals = await this.dominos.fetchDeals();
+      // ✅ Ensure brand
+      const brand = await this.repo.createOrGetBrand(s.brand);
 
-    console.log(`Fetched ${deals.length} deals from scraper`);
+      // ✅ Fetch deals
+      const deals = await s.scraper.fetchDeals();
 
-    // STEP 3: Sync deals (compare + insert + delete)
-    await this.repo.syncDealsForBrand(brand._id.toString(), deals);
+      console.log(`Fetched ${deals.length} deals from ${s.brand.slug}`);
 
-    console.log("Scraping completed successfully");
+      // ✅ Sync (compare + insert + delete)
+      await this.repo.syncDealsForBrand(brand._id.toString(), deals);
+    }
+
+    console.log("All scraping completed");
   }
 }

@@ -14,3 +14,20 @@ export const mapDominosDeals = (rawDeals: any[]): Deal[] => {
     publishedAt: new Date()
   }));
 };
+
+
+// KFC has some unique rules for which deals to include, so we do that logic in the scraper and then just map the final list here
+export const mapKfcDeals = (rawDeals: any[], brandSlug: string): Deal[] => {
+  return rawDeals.map(deal => ({
+    id: Number(deal.id),
+    name: deal.name,
+    description: deal.description,
+    price: Number(deal.price),
+    salePrice: Number(deal.salePrice ?? 0),
+    image: deal.image,
+    category: deal.category || "KFC Deals",
+    brandSlug,
+    isActive: true,
+    publishedAt: new Date()
+  }));
+};
