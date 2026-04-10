@@ -8,7 +8,7 @@ export class DealRepository {
   async createOrGetBrand(data: {
     name: string;
     slug: string;
-    imageBaseUrl: string;
+    baseUrl: string;
   }): Promise<BrandDocument> {
 
     let brand = await BrandModel.findOne({ slug: data.slug });
@@ -17,7 +17,7 @@ export class DealRepository {
       brand = await BrandModel.create({
         name: data.name,
         slug: data.slug,
-        imageBaseUrl: data.imageBaseUrl,
+        baseUrl: data.baseUrl,
         isActive: true,
         publishedAt: new Date()
       });

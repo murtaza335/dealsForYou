@@ -4,6 +4,7 @@ import { DealRepository } from "../repositories/deal.repository.js";
 
 export class ScraperService {
   private repo = new DealRepository();
+  // private publisher = new publishMessage();
 
   // we can easily add more scrapers here in the future by just adding them to this array with their brand info and scraper instance
   private scrapers = [
@@ -12,7 +13,7 @@ export class ScraperService {
       brand: {
         name: "Dominos",
         slug: "dominos",
-        imageBaseUrl: "https://www.dominos.com.pk/images/"
+        baseUrl: "https://www.dominos.com.pk/images/"
       }
     },
     {
@@ -20,7 +21,7 @@ export class ScraperService {
       brand: {
         name: "KFC",
         slug: "kfc",
-        imageBaseUrl: "https://www.kfcpakistan.com/images/"
+        baseUrl: "https://www.kfcpakistan.com"
       }
     }
   ];
@@ -29,22 +30,30 @@ export class ScraperService {
   async run() {
     console.log("Starting all scrapers...");
 
+  
+
+
     for (const s of this.scrapers) {
 
       console.log(`Running scraper for ${s.brand.slug}...`);
 
-      // ✅ Ensure brand
+      //  Ensure brand
       const brand = await this.repo.createOrGetBrand(s.brand);
 
-      // ✅ Fetch deals
+      //  Fetch deals
       const deals = await s.scraper.fetchDeals();
+
+      console.log(`Fetched deals are : ${JSON.stringify(deals)}`);
+
 
       console.log(`Fetched ${deals.length} deals from ${s.brand.slug}`);
 
-      // ✅ Sync (compare + insert + delete)
+      //  Sync (compare + insert + delete)
       await this.repo.syncDealsForBrand(brand._id.toString(), deals);
     }
 
     console.log("All scraping completed");
+
+
   }
 }
