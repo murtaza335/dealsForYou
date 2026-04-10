@@ -1,7 +1,9 @@
 import express, { Application } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import routes from "./routes/index.js";
+import dealsRoutes from "./routes/deals.routes";
+import { notFoundHandler } from "./middlewares/notFoundHandler";
+import { errorHandler } from "./middlewares/errorHandler";
 
 dotenv.config();
 
@@ -13,6 +15,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use("/api", routes);
+app.use("/api/deals", dealsRoutes);
+
+// Error middlewares
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 export default app;
