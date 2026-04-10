@@ -16,14 +16,14 @@ class RabbitMQService implements RabbitMQ {
     if (this.connection && this.channel) return; // Already connected
 
     try {
-      this.connection = await amqp.connect("amqp://localhost");
+      this.connection = await amqp.connect("amqp://localhost:5672");
       this.channel = await this.connection.createChannel();
 
       await this.channel.assertQueue(this.queue, { durable: true });
 
-      console.log("✅ RabbitMQ Connected");
+      console.log("RabbitMQ Connected");
     } catch (error) {
-      console.error("❌ RabbitMQ Connection Error:", error);
+      console.error("RabbitMQ Connection Error:", error);
       throw error;
     }
   }
@@ -40,9 +40,9 @@ class RabbitMQService implements RabbitMQ {
     });
 
     if (sent) {
-      console.log("📨 Message sent to queue");
+      console.log("Message sent to queue");
     } else {
-      console.warn("⚠️ Message failed to send");
+      console.warn("Message failed to send");
     }
   }
 
@@ -57,4 +57,3 @@ class RabbitMQService implements RabbitMQ {
 
 // Export a single instance (Singleton)
 export const rabbitMQ = new RabbitMQService();
-export const publishMessage = rabbitMQ.publishMessage.bind(rabbitMQ);
