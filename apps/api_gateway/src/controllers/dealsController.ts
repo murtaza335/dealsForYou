@@ -11,10 +11,6 @@ export const getFilteredDeals: RequestHandler = async (req, res, next) => {
       brand: typeof req.query.brand === "string" ? req.query.brand : undefined,
       category:
         typeof req.query.category === "string" ? req.query.category : undefined,
-      minPrice:
-        typeof req.query.minPrice === "string"
-          ? Number(req.query.minPrice)
-          : undefined,
       maxPrice:
         typeof req.query.maxPrice === "string"
           ? Number(req.query.maxPrice)
