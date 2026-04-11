@@ -1,9 +1,11 @@
 import { DominosScraper } from "../scrapers/dominos.scraper.js";
 import { KfcScraper } from "../scrapers/kfc.scraper.js";
 import { DealRepository } from "../repositories/deal.repository.js";
+import { rabbitMQ } from "../services/rabbitmq.publisher.js";
 
 export class ScraperService {
   private repo = new DealRepository();
+  private publisher = rabbitMQ;
 
   // we can easily add more scrapers here in the future by just adding them to this array with their brand info and scraper instance
   private scrapers = [
@@ -12,7 +14,7 @@ export class ScraperService {
       brand: {
         name: "Dominos",
         slug: "dominos",
-        imageBaseUrl: "https://www.dominos.com.pk/images/"
+        baseUrl: "https://www.dominos.com.pk/images/"
       }
     },
     {
@@ -20,7 +22,7 @@ export class ScraperService {
       brand: {
         name: "KFC",
         slug: "kfc",
-        imageBaseUrl: "https://www.kfcpakistan.com/images/"
+        baseUrl: "https://www.kfcpakistan.com"
       }
     }
   ];
@@ -29,20 +31,40 @@ export class ScraperService {
   async run() {
     console.log("Starting all scrapers...");
 
-    for (const s of this.scrapers) {
+      //  Connect RabbitMQ ONCE
+    await this.publisher.init();
 
-      console.log(`Running scraper for ${s.brand.slug}...`);
+    try {
+      for (const s of this.scrapers) {
 
-      // ✅ Ensure brand
-      const brand = await this.repo.createOrGetBrand(s.brand);
+        console.log(`Running scraper for ${s.brand.slug}...`);
 
-      // ✅ Fetch deals
-      const deals = await s.scraper.fetchDeals();
+        //  Ensure brand
+        const brand = await this.repo.createOrGetBrand(s.brand);
 
-      console.log(`Fetched ${deals.length} deals from ${s.brand.slug}`);
+        //  Fetch deals
+        const deals = await s.scraper.fetchDeals();
+      
+        //  Send to RabbitMQ
+        const payload = {
+          brand: brand.name,
+          slug: brand.slug,
+          url: s.brand.baseUrl,
+          deals: deals,
+        };
 
-      // ✅ Sync (compare + insert + delete)
-      await this.repo.syncDealsForBrand(brand._id.toString(), deals);
+        await this.publisher.publishMessage(payload);
+
+        console.log(` Sent ${deals.length} deals to queue`);
+
+        console.log(`Fetched ${deals.length} deals from ${s.brand.slug}`);
+
+        //  Sync (compare + insert + delete)
+        await this.repo.syncDealsForBrand(brand._id.toString(), deals);
+      }
+    } finally {
+      // Optional: close connection
+      await this.publisher.close();
     }
 
     console.log("All scraping completed");
