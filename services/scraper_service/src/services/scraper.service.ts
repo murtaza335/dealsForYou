@@ -47,9 +47,11 @@ export class ScraperService {
       
         //  Send to RabbitMQ
         const payload = {
+          brandInfo:{ 
           brand: brand.name,
           slug: brand.slug,
-          url: s.brand.baseUrl,
+          url: s.brand.baseUrl
+          },
           deals: deals,
         };
 
