@@ -56,6 +56,7 @@ export class ScraperService {
         };
 
         await this.publisher.publishMessage(payload);
+        console.log(payload);
 
         console.log(` Sent ${deals.length} deals to queue`);
 

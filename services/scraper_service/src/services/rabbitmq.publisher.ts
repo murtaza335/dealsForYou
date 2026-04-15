@@ -36,7 +36,7 @@ class RabbitMQService implements RabbitMQ {
     const buffer = Buffer.from(JSON.stringify(message));
 
     const sent = this.channel!.sendToQueue(this.queue, buffer, {
-      persistent: true,
+      persistent: false,
     });
 
     if (sent) {

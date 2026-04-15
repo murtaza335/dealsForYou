@@ -34,14 +34,23 @@ class RabbitMQSubscriber {
     }
 
     async handleMessage(msg : amqp.ConsumeMessage) {
+        console.log(msg.content)
         const content = JSON.parse(msg.content.toString());
         
         try {
             console.log("🚀 Processing Deal:", content);
             
+            // make the object for sending to the function
+            const brandInfo = {
+                name: content.brand,
+                slug: content.slug,
+                baseUrl: content.url
+            }
             // here we will be sending the data to the database and then we will be acknowledging the message
             // first extracting and saving the brand
-            const brand = await this.dealRepo.createOrGetBrand(content.brand);
+
+
+            const brand = await this.dealRepo.createOrGetBrand(brandInfo);
             // then syncing the deals for that brand
             await this.dealRepo.syncDealsForBrand(brand._id.toString(), content.deals);
 

@@ -5,19 +5,20 @@ import { BrandDocument, BrandModel } from "../models/brand.model.js";
 export class DealRepository {
 
   //  Create brand if not exists
-  async createOrGetBrand(data: {
+  async createOrGetBrand(brandInfo: {
     name: string;
     slug: string; 
     baseUrl: string;
   }): Promise<BrandDocument> {
 
-    let brand = await BrandModel.findOne({ slug: data.slug });
+
+    let brand = await BrandModel.findOne({ slug: brandInfo.slug });
 
     if (!brand) {
       brand = await BrandModel.create({
-        name: data.name,
-        slug: data.slug,
-        baseUrl: data.baseUrl,
+        name: brandInfo.name,
+        slug: brandInfo.slug,
+        baseUrl: brandInfo.baseUrl,
         isActive: true,
         publishedAt: new Date()
       });
