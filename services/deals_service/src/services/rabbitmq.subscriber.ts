@@ -1,12 +1,12 @@
 import amqp, {Channel, ChannelModel, Connection} from "amqplib";
-import { DealRepository } from "../repositories/deal.repository.js";
+// import { DealRepository } from "../repositories/deal.repository.js";
 
 class RabbitMQSubscriber {
     private connection: ChannelModel | null = null;
     private channel: Channel | null = null;
     private readonly queue = "scraper_deals_queue";
 
-    dealRepo = new DealRepository();
+    // dealRepo = new DealRepository();
     constructor() {}
 
     async init() {
@@ -50,9 +50,9 @@ class RabbitMQSubscriber {
             // first extracting and saving the brand
 
 
-            const brand = await this.dealRepo.createOrGetBrand(brandInfo);
+            // const brand = await this.dealRepo.createOrGetBrand(brandInfo);
             // then syncing the deals for that brand
-            await this.dealRepo.syncDealsForBrand(brand._id.toString(), content.deals);
+            // await this.dealRepo.syncDealsForBrand(brand._id.toString(), content.deals);
 
             
             // 3. Acknowledge: Tell RabbitMQ the message is processed and can be deleted
