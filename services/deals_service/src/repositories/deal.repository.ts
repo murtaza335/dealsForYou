@@ -1,6 +1,6 @@
 import { DealModel } from "../models/deal.model.js";
 import { Deal } from "../types/deal.type.js";
-import { BrandDocument, BrandModel } from "../models/brand.model.js";
+import { BrandDocument, BrandModel } from "../models/brands.model.js";
 
 export class DealRepository {
 
