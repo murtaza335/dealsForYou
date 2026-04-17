@@ -43,6 +43,8 @@ export interface DealDocument extends Document {
   conditions?: string;
   startTime?: Date;
   endTime: Date;
+  isExpired: boolean;
+  isActive: boolean;
   isHot: boolean;
   viewsCount: number;
   scrapedAt?: Date;
@@ -73,6 +75,18 @@ const dealSchema = new Schema<DealDocument>(
     conditions: { type: String },
     startTime: { type: Date },
     endTime: { type: Date, required: true },
+    isExpired: {
+      type: Boolean,
+      default: function(): boolean {
+        return this.endTime < new Date();
+      }
+    },
+    isActive: {
+      type: Boolean,
+      default: function(): boolean {
+        return this.endTime > new Date();
+      }
+    },
     isHot: { type: Boolean, default: false },
     viewsCount: { type: Number, default: 0 },
     scrapedAt: { type: Date },

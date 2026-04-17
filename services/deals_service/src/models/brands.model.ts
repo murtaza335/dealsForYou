@@ -28,6 +28,10 @@ export interface BrandDocument extends Document<Types.ObjectId> {
   description?: string;
   logoUrl?: string;
   website?: string;
+  cities?: string[];
+  areas?: string[];
+  locations?: { lat: number; lng: number }[];
+  country?: string;
 }
 
 const brandSchema = new Schema<BrandDocument>(
@@ -47,6 +51,10 @@ const brandSchema = new Schema<BrandDocument>(
     description: { type: String },
     logoUrl: { type: String },
     website: { type: String },
+    cities: [ { type: String } ],
+    areas: [ { type: String } ],
+    locations: [{ type: { lat: Number, lng: Number } }],
+    country: { type: String },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
   },
