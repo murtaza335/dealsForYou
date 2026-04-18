@@ -2,38 +2,45 @@ import axios from "axios";
 import { BaseScraper } from "./base.scraper.js";
 import { mapDominosDeals } from "../adapters/deal.adapter.js";
 import { Deal } from "../interfaces/deal.interface.js";
+import { ScraperSourceDocument } from "../models/scraper_sources.js";
 
-//we use the dominos api to get the menu data 
-const DOMINOS_IMAGE_BASE_URL = "https://www.dominos.com.pk/images/";
-
-const normalizeImageUrl = (imagePath: string | undefined): string => {
-  if (!imagePath) return DOMINOS_IMAGE_BASE_URL;
+const normalizeImageUrl = (
+  imagePath: string | undefined,
+  imageBaseUrl: string
+): string => {
+  if (!imagePath) return imageBaseUrl;
   if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
     return imagePath;
   }
 
-  const cleanBase = DOMINOS_IMAGE_BASE_URL.endsWith("/")
-    ? DOMINOS_IMAGE_BASE_URL
-    : `${DOMINOS_IMAGE_BASE_URL}/`;
+  const cleanBase = imageBaseUrl.endsWith("/")
+    ? imageBaseUrl
+    : `${imageBaseUrl}/`;
   const cleanPath = imagePath.startsWith("/") ? imagePath.slice(1) : imagePath;
   return `${cleanBase}${cleanPath}`;
 };
 
 // Dominos scraper implementation 
 export class DominosScraper extends BaseScraper {
-  async fetchDeals(): Promise<Deal[]> {
+  async fetchDeals(source: ScraperSourceDocument): Promise<Deal[]> {
     try {
+      const requestBody =
+        source.body && typeof source.body === "object" && !Array.isArray(source.body)
+          ? source.body
+          : {};
+
+      const requestHeaders =
+        source.headers && typeof source.headers === "object" && !Array.isArray(source.headers)
+          ? source.headers
+          : {};
+
+      const imageBaseUrl = source.baseApiUrl || "https://www.dominos.com.pk/images/";
+
       const response = await axios.post(
-        "https://www.dominos.com.pk/api/menu/menudata",
+        source.scrapApiURl,
+        requestBody,
         {
-          body: "U2FsdGVkX197Ze4kW9rY5vRnb9y1f4MoTTAbHPlCyEq8BHb3cSUMrQbBtWzw1MA8Wm5P/Zpq68xujm1y31WlFE2pa9031vxMS13Dh7bS59w="
-        },
-        {
-          headers: {
-            "content-type": "application/json",
-            origin: "https://www.dominos.com.pk",
-            referer: "https://www.dominos.com.pk/"
-          }
+          headers: requestHeaders
         }
       );
 
@@ -52,7 +59,7 @@ export class DominosScraper extends BaseScraper {
             description: deal.combo_description,
             price: deal.combo_mrp_price,
             salePrice: deal.combo_sale_price,
-            image: normalizeImageUrl(deal.image_url),
+            image: normalizeImageUrl(deal.image_url, imageBaseUrl),
             category:
               item.sub_group_name ||
               item.subgroup_name ||

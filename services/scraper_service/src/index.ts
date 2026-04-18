@@ -1,5 +1,6 @@
 import { connectDB } from "./config/db.js";
 import { ENV } from "./config/env.js";
+import { startHttpServer } from "./http.js";
 import { startJobs } from "./jobs/runScrapers.js";
 import { ScraperService } from "./services/scraper.service.js";
 
@@ -17,6 +18,8 @@ const start = async () => {
  //calling the startjobs do that it run after each 30 min 
   console.log(`Scheduling scraper with interval: ${ENV.SCRAPER_INTERVAL}`);
   startJobs(ENV.SCRAPER_INTERVAL);
+
+  startHttpServer();
 };
 
 start().catch(error => {
