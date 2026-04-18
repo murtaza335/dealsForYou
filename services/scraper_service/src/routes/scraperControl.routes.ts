@@ -6,7 +6,7 @@ import {
   getScraperSourceBySlug,
   listScraperSources,
   updateScraperSource
-} from "../controllers/scraper-control.controller.js";
+} from "../controllers/scraperControl.controller.js";
 
 export const scraperControlRouter = Router();
 

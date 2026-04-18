@@ -5,7 +5,6 @@ export interface ScraperLogDocument extends mongoose.Document {
     sourceSlug: string;
     status: "success" | "failure";
     dealsScraped: number;
-    message: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -16,12 +15,8 @@ const scraperLogSchema = new mongoose.Schema<ScraperLogDocument>(
         sourceSlug: { type: String, required: true },
         status: { type: String, enum: ["success", "failure"], required: true },
         dealsScraped: { type: Number, default: 0 },
-        message: { type: String, default: "" }
     },
-    { timestamps: true }
+    { timestamps: { createdAt: true, updatedAt: false } }//becasue logs cannot be updated 
 );  
 
 export const ScraperLogModel = mongoose.model<ScraperLogDocument>("ScraperLog", scraperLogSchema);
-
-
-

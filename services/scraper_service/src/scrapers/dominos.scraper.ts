@@ -2,7 +2,7 @@ import axios from "axios";
 import { BaseScraper } from "./base.scraper.js";
 import { mapDominosDeals } from "../adapters/deal.adapter.js";
 import { Deal } from "../interfaces/deal.interface.js";
-import { ScraperSourceDocument } from "../models/scraper_sources.js";
+import { ScraperSourceDocument } from "../models/scraperSources.js";
 
 const normalizeImageUrl = (
   imagePath: string | undefined,

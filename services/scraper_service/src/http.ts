@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import { ENV } from "./config/env.js";
-import { scraperControlRouter } from "./routes/scraper-control.routes.js";
+import { scraperControlRouter } from "./routes/scraperControl.routes.js";
 
 const app = express();
 
