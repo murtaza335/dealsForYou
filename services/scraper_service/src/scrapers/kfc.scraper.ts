@@ -2,7 +2,7 @@ import axios from "axios";
 import { BaseScraper } from "./base.scraper.js";
 import { Deal } from "../interfaces/deal.interface.js";
 import { mapKfcDeals } from "../adapters/deal.adapter.js";
-import { ScraperSourceDocument } from "../models/scraper_sources.js";
+import { ScraperSourceDocument } from "../models/scraperSources.js";
 
 //  Time check as it also have midnight deal`s that are only available during night time so time check is required
 function isWithinServingHours(servingHours: string | null): boolean {

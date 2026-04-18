@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ScraperControlService } from "../services/scraper-control.service.js";
+import { ScraperControlService } from "../services/scraperControl.service.js";
 
 const scraperControlService = new ScraperControlService();
 const getSlugParam = (req: Request) => String(req.params.slug || "");

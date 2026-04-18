@@ -1,4 +1,4 @@
-import { ScraperControlRepository } from "../repositories/scrapercontrol.js";
+import { ScraperControlRepository } from "../repositories/scraperControl.repository.js";
 
 const normalizeObjectInput = (
   value: unknown,

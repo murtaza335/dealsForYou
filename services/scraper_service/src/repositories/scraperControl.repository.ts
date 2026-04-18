@@ -1,4 +1,4 @@
-import { ScraperSourceModel } from "../models/scraper_sources.js";
+import { ScraperSourceModel } from "../models/scraperSources.js";
 
 
 export class ScraperControlRepository {
@@ -62,4 +62,41 @@ async activateScraperSource(slug: string) {
 async getScraperSourceBySlug(slug: string) {
     return ScraperSourceModel.findOne({ slug });
 }
+
+//get status by slug active or not
+async isScraperSourceActive(slug: string) {
+    const source = await ScraperSourceModel.findOne(
+      { slug },
+      { isActive: 1, _id: 0 }
+    );
+    return source?.isActive || false;
+  } 
+
+// get time periods by slug and day
+async getTimePeriodsByDay(slug: string, day: string) {
+    const source = await ScraperSourceModel.findOne(
+      { slug },
+      { scrapingTime: 1, _id: 0 }
+    );
+
+    if (!source) return [];
+
+    const dayConfig = source.scrapingTime.find(
+      (d) => d.day.toLowerCase() === day.toLowerCase()
+    );
+
+    if (!dayConfig) return [];
+
+    return dayConfig.timePeriods;
+  }
+
+  // get scraping interval by slug
+  async getScrapingIntervalBySlug(slug: string) {
+    const source = await ScraperSourceModel.findOne(
+      { slug},      
+
+      { scrapingInterval: 1, _id: 0 }
+    );    
+    return source?.scrapingInterval || 24; // default to 24 hours if not set
+  }
 }
