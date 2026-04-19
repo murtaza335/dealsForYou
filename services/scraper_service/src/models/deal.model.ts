@@ -2,8 +2,8 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 //our schema for the deal data that we will be storing in our database
 export interface DealDocument extends Document {
-  id: number;
-  name: string;
+  externalId: number;
+  title: string;
   description: string;
   price: number;
   salePrice: number;
@@ -18,8 +18,8 @@ export interface DealDocument extends Document {
 
 const dealSchema = new Schema<DealDocument>(
   {
-    id: { type: Number, required: true },
-    name: { type: String, required: true, trim: true },
+    externalId: { type: Number, required: true },
+    title: { type: String, required: true, trim: true },
     description: { type: String, default: "" },
     price: { type: Number, required: true },
     salePrice: { type: Number, default: 0 },
@@ -32,6 +32,6 @@ const dealSchema = new Schema<DealDocument>(
   { timestamps: true }
 );
 
-dealSchema.index({ brandId: 1, id: 1 }, { unique: true });
+dealSchema.index({ brandId: 1, externalId: 1 }, { unique: true });
 
 export const DealModel = mongoose.model<DealDocument>("Deal", dealSchema);
