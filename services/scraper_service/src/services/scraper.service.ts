@@ -78,6 +78,8 @@ export class ScraperService {
           deals: deals,
         };
 
+        console.log(`Publishing ${payload}`); 
+
         await this.publisher.publishMessage(payload);
         console.log(payload);
 
