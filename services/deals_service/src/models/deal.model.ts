@@ -74,7 +74,7 @@ const dealSchema = new Schema<DealDocument>(
     mealType: [{ type: String }],
     conditions: { type: String },
     startTime: { type: Date },
-    endTime: { type: Date, required: true },
+    endTime: { type: Date },
     isExpired: {
       type: Boolean,
       default: function(): boolean {
