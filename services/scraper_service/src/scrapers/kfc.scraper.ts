@@ -2,8 +2,7 @@ import axios from "axios";
 import { BaseScraper } from "./base.scraper.js";
 import { Deal } from "../interfaces/deal.interface.js";
 import { mapKfcDeals } from "../adapters/deal.adapter.js";
-
-const KFC_API_URL = "https://www.kfcpakistan.com/api/menu/allGroups";
+import { ScraperSourceDocument } from "../models/scraperSources.js";
 
 //  Time check as it also have midnight deal`s that are only available during night time so time check is required
 function isWithinServingHours(servingHours: string | null): boolean {
@@ -45,19 +44,25 @@ function isComboLike(item: any): boolean {
 }
 
 export class KfcScraper extends BaseScraper {
-  async fetchDeals(): Promise<Deal[]> {
+  async fetchDeals(source: ScraperSourceDocument): Promise<Deal[]> {
     try {
+      const requestBody =
+        source.body && typeof source.body === "object" && !Array.isArray(source.body)
+          ? source.body
+          : {};
+
+      const requestHeaders =
+        source.headers && typeof source.headers === "object" && !Array.isArray(source.headers)
+          ? source.headers
+          : {};
+
+      const imageBaseUrl = source.baseApiUrl || "https://www.kfcpakistan.com";
+
       const response = await axios.post(
-        KFC_API_URL,
+        source.scrapApiURl,
+        requestBody,
         {
-          body: "U2FsdGVkX19sd3Br8mCkgM4tMiNx2gMkr5LPNMEeShLWmoCMdJPiMEpquQP+zq63Ix3RcIUEPF43jQfXrWO9pVQjfZIYrQdoYqlo4F+2xrkTtRo1ji2cLM7AxPCuNLYV"
-        },
-        {
-          headers: {
-            "content-type": "application/json",
-            origin: "https://www.kfcpakistan.com",
-            referer: "https://www.kfcpakistan.com/menu"
-          }
+          headers: requestHeaders
         }
       );
 
@@ -93,7 +98,7 @@ export class KfcScraper extends BaseScraper {
               0,
             salePrice: 0,
             image:
-              "https://www.kfcpakistan.com/images/"+item.image_url ||
+              `${imageBaseUrl}/images/${item.image_url}` ||
               item.item_size?.[0]?.image_url ||
               "",
             category: group.group_name || "KFC Deals"

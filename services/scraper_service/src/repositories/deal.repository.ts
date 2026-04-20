@@ -38,11 +38,11 @@ export class DealRepository {
     const existingDeals = await DealModel.find({ brandId });
 
     const existingMap = new Map(
-      existingDeals.map(deal => [deal.id, deal])
+      existingDeals.map(deal => [deal.externalId, deal])
     );
 
     const newDealsMap = new Map(
-      newDeals.map(deal => [deal.id, deal])
+      newDeals.map(deal => [deal.externalId, deal])
     );
 
     let inserted = 0;
@@ -50,7 +50,7 @@ export class DealRepository {
 
     // 2. INSERT / UPDATE
     for (const deal of newDeals) {
-      const existing = existingMap.get(deal.id);
+      const existing = existingMap.get(deal.externalId);
 
       if (!existing) {
         //  INSERT
@@ -65,7 +65,7 @@ export class DealRepository {
           { _id: existing._id },
           {
             $set: {
-              name: deal.name,
+              name: deal.title,
               description: deal.description,
               price: deal.price,
               salePrice: deal.salePrice,
@@ -80,11 +80,11 @@ export class DealRepository {
     }
 
     // 3. DELETE (not in new scraper output) outdated deals will be deleted from the database
-    const newIds = newDeals.map(d => d.id);
+    const newExternalIds = newDeals.map(d => d.externalId);
 
     const deleteResult = await DealModel.deleteMany({
       brandId,
-      id: { $nin: newIds }
+      externalId: { $nin: newExternalIds }
     });
 
     console.log(`Inserted: ${inserted}, Updated: ${updated}, Deleted: ${deleteResult.deletedCount}`);
