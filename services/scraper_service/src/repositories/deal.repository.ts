@@ -14,7 +14,7 @@ export class DealRepository {
     let brand = await BrandModel.findOne({ slug: data.slug });
 
     if (!brand) {
-      brand = await BrandModel.create({
+        brand = await BrandModel.create({
         name: data.name,
         slug: data.slug,
         baseUrl: data.baseUrl,

@@ -18,3 +18,4 @@
 **/.env.development
 **/.env.test
 **/.env.production
+rabbitmq_delayed_message_exchange-3.13.0.ez
