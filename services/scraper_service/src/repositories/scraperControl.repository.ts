@@ -1,16 +1,19 @@
 import { ScraperSourceModel } from "../models/scraperSources.js";
-
+import { ScraperSourceDocument } from "../models/scraperSources.js";
 
 export class ScraperControlRepository {
 
-  async listScraperSources() {
+  //  Get all sources
+  async listScraperSources(): Promise<ScraperSourceDocument[]> {
     return ScraperSourceModel.find().sort({ createdAt: -1 });
   }
 
-  async listActiveScraperSources() {
+  //  Used by scheduler to get only active sources (optimized)
+  async listActiveScraperSources(): Promise<ScraperSourceDocument[]> {
     return ScraperSourceModel.find({ isActive: true }).sort({ slug: 1 });
   }
 
+  // Create (UPDATED: includes runTimes, removed old fields)
   async createScraperSource(data: {
     brandName: string;
     slug: string;
@@ -18,13 +21,13 @@ export class ScraperControlRepository {
     scrapApiURl: string;
     body: Record<string, unknown>;
     headers: Record<string, unknown>;
-    scrapingInterval?: number;
-    scrapingTime?: { day: string; timePeriods: { open: string; close: string }[] }[];
+    runTimes: string[]; //  new scheduling field
     isActive?: boolean;
-  }) {
+  }): Promise<ScraperSourceDocument> {
     return ScraperSourceModel.create(data);
   }
 
+  // ✅  Update (UPDATED: removed old scheduling logic)
   async updateScraperSourceBySlug(
     slug: string,
     data: Partial<{
@@ -33,70 +36,60 @@ export class ScraperControlRepository {
       scrapApiURl: string;
       body: Record<string, unknown>;
       headers: Record<string, unknown>;
-      scrapingInterval: number;
-      scrapingTime: { day: string; timePeriods: { open: string; close: string }[] }[];
+      runTimes: string[]; // ✅ new
       isActive: boolean;
     }>
-  ) {
-    return ScraperSourceModel.findOneAndUpdate({ slug }, data, {
-      new: true,
-      runValidators: true
-    });
+  ): Promise<ScraperSourceDocument | null> {
+    return ScraperSourceModel.findOneAndUpdate(
+      { slug },
+      data,
+      {
+        new: true,
+        runValidators: true
+      }
+    );
   }
 
-// Deactivate a scraper source by id
-async deactivateScraperSource(slug: string) {
-return ScraperSourceModel.findOneAndUpdate({ slug }, {
-  isActive: false
-}, { new: true });
-}
+  //  Deactivate
+  async deactivateScraperSource(slug: string): Promise<ScraperSourceDocument | null> {
+    return ScraperSourceModel.findOneAndUpdate(
+      { slug },
+      { isActive: false },
+      { new: true }
+    );
+  }
 
-// Activate a scraper source by slug
-async activateScraperSource(slug: string) {
-  return ScraperSourceModel.findOneAndUpdate({ slug }, {
-    isActive: true
-  }, { new: true });
-}
+  // ✅ Activate
+  async activateScraperSource(slug: string): Promise<ScraperSourceDocument | null> {
+    return ScraperSourceModel.findOneAndUpdate(
+      { slug },
+      { isActive: true },
+      { new: true }
+    );
+  }
 
-// get id by slug
-async getScraperSourceBySlug(slug: string) {
+  // ✅ Get full document (USED BY runSingle)
+  async getBySlug(slug: string): Promise<ScraperSourceDocument | null> {
     return ScraperSourceModel.findOne({ slug });
-}
-
-//get status by slug active or not
-async isScraperSourceActive(slug: string) {
-    const source = await ScraperSourceModel.findOne(
-      { slug },
-      { isActive: 1, _id: 0 }
-    );
-    return source?.isActive || false;
-  } 
-
-// get time periods by slug and day
-async getTimePeriodsByDay(slug: string, day: string) {
-    const source = await ScraperSourceModel.findOne(
-      { slug },
-      { scrapingTime: 1, _id: 0 }
-    );
-
-    if (!source) return [];
-
-    const dayConfig = source.scrapingTime.find(
-      (d) => d.day.toLowerCase() === day.toLowerCase()
-    );
-
-    if (!dayConfig) return [];
-
-    return dayConfig.timePeriods;
   }
 
-  // get scraping interval by slug
-  async getScrapingIntervalBySlug(slug: string) {
+  // ✅ Check active status (lightweight)
+  async isScraperSourceActive(slug: string): Promise<boolean> {
     const source = await ScraperSourceModel.findOne(
-      { slug},      
+      { slug },
+      { isActive: 1 }
+    );
 
-      { scrapingInterval: 1, _id: 0 }
-    );    
-    return source?.scrapingInterval || 24; // default to 24 hours if not set
+    return source?.isActive ?? false;
+  }
+
+  // ✅ Optional: Get only runTimes (scheduler optimization)
+  async getRunTimesBySlug(slug: string): Promise<string[]> {
+    const source = await ScraperSourceModel.findOne(
+      { slug },
+      { runTimes: 1, _id: 0 }
+    );
+
+    return source?.runTimes || [];
   }
 }

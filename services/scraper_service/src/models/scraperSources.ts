@@ -7,8 +7,8 @@ export interface ScraperSourceDocument extends Document {
   scrapApiURl: string;
   body: object;
   headers: object;
-  scrapingInterval: number; // in hours after how many hours the scraper should run again
-  scrapingTime : { day: string; timePeriods: { open: string; close: string }[] }[]; // on which time the scraper should run + 10 mins if scrapper service run and and scrapped time within 10 mins then it should run means scrapped time on monday 5.01 am and current time is 5.05 am then it should run because it is within 10 mins
+  //scrapingInterval: number; // in hours after how many hours the scraper should run again
+  runTimes: string[]; // simple array of start time only  it must be in HH:MM format colon must be used
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;  
@@ -22,18 +22,8 @@ const scraperSourceSchema = new Schema<ScraperSourceDocument>(
     scrapApiURl: { type: String, required: true },
     body: { type: Schema.Types.Mixed, required: true },
     headers: { type: Schema.Types.Mixed, required: true },
-    scrapingInterval: { type: Number, default: 24 }, // in hours
-    scrapingTime: [
-      {
-        day: { type: String, required: true },
-        timePeriods: [
-          {
-            open: { type: String, required: true }, 
-            close: { type: String, required: true }
-            }
-        ]
-      }
-    ],  
+    //scrapingInterval: { type: Number, default: 24 }, // in hours
+    runTimes: { type: [String], default: [] }, // array of start time only 
     isActive: { type: Boolean, default: true }
   },
   { timestamps: true }  
