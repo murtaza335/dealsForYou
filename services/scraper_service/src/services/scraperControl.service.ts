@@ -32,7 +32,7 @@ export class ScraperControlService {
   }
 
   async getBySlug(slug: string) {
-    return this.repo.getScraperSourceBySlug(slug);
+    return this.repo.getBySlug(slug);
   }
 
   async create(payload: {
@@ -42,8 +42,7 @@ export class ScraperControlService {
     scrapApiURl: string;
     body?: unknown;
     headers?: unknown;
-    scrapingInterval?: number;
-    scrapingTime?: { day: string; timePeriods: { open: string; close: string }[] }[];
+    runTimes: string[]; // new scheduling field
     isActive?: boolean;
   }) {
     return this.repo.createScraperSource({
@@ -54,6 +53,8 @@ export class ScraperControlService {
     });
   }
 
+  
+  
   async update(
     slug: string,
     payload: Partial<{

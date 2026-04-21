@@ -10,5 +10,5 @@ export const ENV = {
 
   NODE_ENV: process.env.NODE_ENV || "development",
 
-  SCRAPER_INTERVAL: process.env.SCRAPER_INTERVAL || "*/30 * * * *" // every 30 min
+  SCRAPER_INTERVAL: process.env.SCRAPER_INTERVAL || "*/120 * * * *" // every 120 min
 };
