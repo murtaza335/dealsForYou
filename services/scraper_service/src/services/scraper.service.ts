@@ -47,9 +47,10 @@ export class ScraperService {
         // GETting BRAND ID
         const brandId = source._id;
         console.log(`Checking if scraper can run for ${source.slug} ...`);
-        const canRun = await this.stateRepo.canRunScraper(source.slug);
+        // const canRun = await this.stateRepo.canRunScraper(source.slug);
 
-        console.log(`Can run scraper for ${source.slug}: ${canRun}`);
+        let canRun = true;
+        // console.log(`Can run scraper for ${source.slug}: ${canRun}`);
         // check weather scrapper should run or not 
         if (!canRun) {
           console.log(`Skipping scraper for ${source.slug} due to scraping interval or inactive status.`);
