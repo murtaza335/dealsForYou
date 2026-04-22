@@ -259,6 +259,20 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
   );
 
   console.log(`[DealSync] DONE | brandId=${brandId}`);
+  // Publish each upserted deal to RabbitMQ for embedding
+  const publishedDeals = await DealModel.find({ 
+    brandId: brandObjectId,
+    externalId: { $in: incomingExternalIds }
+  });
+
+  for (const deal of publishedDeals) {
+    try {
+      const { publishDealCreated } = await import('../services/rabbitmq.publisher.js');
+      await publishDealCreated(deal.dealId, deal.toObject(), brandId);
+    } catch (err) {
+      console.error(`Failed to publish deal ${deal.dealId}:`, err);
+    }
+  }
 }
 
 

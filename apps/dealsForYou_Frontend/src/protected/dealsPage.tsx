@@ -23,7 +23,7 @@ type DealsPageProps = {
 };
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
-const VITE_RECOMMENDATION_URL = import.meta.env.VITE_RECOMMENDATION_URL 
+const VITE_RECOMMENDATION_URL = import.meta.env.VITE_RECOMMENDATION_URL
 
 const buildQuery = (params: Record<string, string | undefined>) => {
   const searchParams = new URLSearchParams();
@@ -171,14 +171,12 @@ function DealsPage({ onSignOut }: DealsPageProps) {
 
   const handleDealClick = async (dealId: number) => {
     try {
-      await fetch(`${VITE_RECOMMENDATION_URL}/api/track/track-click`, {
+      await fetch(`${VITE_RECOMMENDATION_URL}/api/track/view-detail`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          dealId,
-        }),
+        body: JSON.stringify({ userId: user?.id, dealId, source: "dashboard" })
       });
     } catch (err) {
       console.error("Failed to track click: ", err);
