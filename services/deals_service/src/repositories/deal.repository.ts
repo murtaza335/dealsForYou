@@ -5,6 +5,13 @@ import { LogDocument } from "../models/logs.js";
 import { DealDocument } from "../models/deal.model.js";
 import { BrandDocument, BrandModel } from "../models/brands.model.js";
 
+export interface DealFilters {
+  minPrice?: number;
+  maxPrice?: number;
+  query?: string;
+  brand?: string;
+}
+
 // const brandSchema = new Schema<BrandDocument>(
 //   {
 //     brandId: {
@@ -33,6 +40,10 @@ import { BrandDocument, BrandModel } from "../models/brands.model.js";
 // );
 
 export class DealRepository {
+
+  private escapeRegex(text: string): string {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
 
   private isRetryableSyncError(error: unknown): boolean {
     if (typeof error !== "object" || error === null) {
@@ -233,6 +244,55 @@ export class DealRepository {
 
   async getDealById(dealId: string): Promise<DealDocument | null> {
     return await DealModel.findOne({ dealId: dealId });
+  }
+
+  async getDeals(filters: DealFilters): Promise<DealDocument[]> {
+    const mongoFilter: Record<string, unknown> = {};
+
+    if (typeof filters.brand === "string" && filters.brand.trim().length > 0) {
+      const normalizedBrand = filters.brand.trim();
+      const escapedBrand = this.escapeRegex(normalizedBrand);
+      const exactBrandRegex = new RegExp(`^${escapedBrand}$`, "i");
+
+      const matchingBrands = await BrandModel.find({
+        $or: [
+          { slug: exactBrandRegex },
+          { name: exactBrandRegex }
+        ]
+      }).select("_id");
+
+      if (matchingBrands.length === 0) {
+        return [];
+      }
+
+      mongoFilter.brandId = { $in: matchingBrands.map((brand) => brand._id) };
+    }
+
+    if (typeof filters.minPrice === "number" || typeof filters.maxPrice === "number") {
+      const priceRange: Record<string, number> = {};
+
+      if (typeof filters.minPrice === "number") {
+        priceRange.$gte = filters.minPrice;
+      }
+
+      if (typeof filters.maxPrice === "number") {
+        priceRange.$lte = filters.maxPrice;
+      }
+
+      mongoFilter.price = priceRange;
+    }
+
+    if (typeof filters.query === "string" && filters.query.trim().length > 0) {
+      const regex = new RegExp(this.escapeRegex(filters.query.trim()), "i");
+
+      mongoFilter.$or = [
+        { title: regex },
+        { description: regex },
+        { cuisineTags: { $in: [regex] } }
+      ];
+    }
+
+    return await DealModel.find(mongoFilter).sort({ createdAt: -1 });
   }
 
   // async incrementDealViews(dealId: string): Promise<void> {
