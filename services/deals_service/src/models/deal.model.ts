@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
+import { v4 as uuidv4 } from "uuid";
 
 // CREATE TABLE deals (
 //     deal_id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -48,8 +49,6 @@ export interface DealDocument extends Document {
   isHot: boolean;
   viewsCount: number;
   scrapedAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 const dealSchema = new Schema<DealDocument>(
@@ -58,13 +57,13 @@ const dealSchema = new Schema<DealDocument>(
       type: String,
       required: true,
       unique: true,
-      default: () => new mongoose.Types.ObjectId().toString() // Generate UUID string
+      default: () => uuidv4() // Generate UUID string
     },
     brandId: { type: Schema.Types.ObjectId, ref: "Brand", required: true },
     externalId: { type: String, required: true },
-    title: { type: String, required: true },
+    title: { type: String },
     description: { type: String },
-    price: { type: Number, required: true },
+    price: { type: Number },
     originalPrice: { type: Number },
     currency: { type: String, default: "PKR" },
     discountPercent: { type: Number },
@@ -73,29 +72,23 @@ const dealSchema = new Schema<DealDocument>(
     cuisineTags: [{ type: String }],
     mealType: [{ type: String }],
     conditions: { type: String },
-    startTime: { type: Date },
-    endTime: { type: Date },
+    startTime: { type: Date , nullable: true},
+    endTime: { type: Date , nullable: true},
     isExpired: {
       type: Boolean,
-      default: function(): boolean {
-        return this.endTime < new Date();
-      }
+      default: false,
     },
     isActive: {
       type: Boolean,
-      default: function(): boolean {
-        return this.endTime > new Date();
-      }
+      default: true,
     },
     isHot: { type: Boolean, default: false },
     viewsCount: { type: Number, default: 0 },
     scrapedAt: { type: Date },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
   },
   { timestamps: true }
 );
 
 dealSchema.index({ brandId: 1, externalId: 1 }, { unique: true });
 
-export const DealModel = mongoose.model<DealDocument>("Deal", dealSchema);
+export const DealModel = mongoose.model("Deal", dealSchema, "deals");

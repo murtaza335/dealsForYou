@@ -21,7 +21,7 @@ class RabbitMQSubscriber {
             // This prevents one worker from getting overloaded while others are idle
             this.channel.prefetch(1);
 
-            console.log(`📥 Waiting for messages in ${this.queue}...`);
+            console.log(`Waiting for messages in ${this.queue}...`);
 
             // 2. Start consuming
             this.channel.consume(this.queue, async (msg) => {
@@ -35,7 +35,6 @@ class RabbitMQSubscriber {
     }
 
     async handleMessage(msg: amqp.ConsumeMessage) {
-        console.log(msg.content)
         let content;
         try {
             content = JSON.parse(msg.content.toString());
@@ -45,13 +44,13 @@ class RabbitMQSubscriber {
         }
 
         try {
-            console.log("🚀 Processing Deal:", content);
-
+            console.log("Received brandinfo");
+            console.log(content.brandInfo.brand, content.brandInfo.slug, content.brandInfo.url, content.deals.length);
             // make the object for sending to the function
             const brandInfo = {
-                name: content.brand,
-                slug: content.slug,
-                baseUrl: content.url
+                name: content.brandInfo.brand,
+                slug: content.brandInfo.slug,
+                baseUrl: content.brandInfo.url
             }
             // here we will be sending the data to the database and then we will be acknowledging the message
             // first extracting and saving the brand
