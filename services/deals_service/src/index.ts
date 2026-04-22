@@ -12,12 +12,20 @@ app.use(express.json());
 app.use("/api/deals", dealsRouter);
  
 app.get("/", (req: Request, res: Response) => {
-    res.send("Caching Service is Up!");
+    res.send("Data service is Up!");
 });
 
 app.listen(PORT, async () => {
     console.log(`Server running on http://localhost:${PORT}`);
 
+    // conenct db first 
+    await connectDB();
+    console.log("[DB] name:", mongoose.connection.name);
+console.log("[DB] modelNames:", mongoose.modelNames());
+console.log("[DB] BrandModel collection:", BrandModel.collection.name);
+console.log("[DB] DealModel collection:", DealModel.collection.name);
+
+    // then start the rabbitmq subscriber
     await rabbitMQSubscriber.init();
-    connectDB();
+    
 });

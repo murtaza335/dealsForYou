@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
+import { v4 as uuidv4 } from "uuid";
 
 // CREATE TABLE brands (
 //     brand_id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -21,7 +22,6 @@ export interface BrandDocument extends Document<Types.ObjectId> {
   slug: string;
   baseUrl: string;
   isActive: boolean;
-  publishedAt: Date;
   createdAt: Date;
   updatedAt: Date;
   tagline?: string;
@@ -40,13 +40,12 @@ const brandSchema = new Schema<BrandDocument>(
       type: String,
       required: true,
       unique: true,
-      default: () => new mongoose.Types.ObjectId().toString() // Generate UUID string
+      default: () => uuidv4() // Generate UUID string
     },
-    name: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
     baseUrl: { type: String, required: true },
     isActive: { type: Boolean, default: true },
-    publishedAt: { type: Date, default: Date.now },
     tagline: { type: String },
     description: { type: String },
     logoUrl: { type: String },
@@ -55,8 +54,6 @@ const brandSchema = new Schema<BrandDocument>(
     areas: [ { type: String } ],
     locations: [{ type: { lat: Number, lng: Number } }],
     country: { type: String },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
   },
   { timestamps: true }
 );
