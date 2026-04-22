@@ -10,6 +10,10 @@ function required(name: string): string {
 export const env = {
   PORT: Number(process.env.PORT || 3005),
   MONGO_URI_RECOMMENDATION_SERVICE: required("MONGO_URI_RECOMMENDATION_SERVICE"),
-  EMBEDDING_MODEL: process.env.EMBEDDING_MODEL || "text-embedding-3-small",
+  RABBITMQ_URL: process.env.RABBITMQ_URL || "amqp://localhost:5672",
+  EMBEDDING_MODEL: process.env.EMBEDDING_MODEL || "Xenova/all-MiniLM-L6-v2",
   EMBEDDING_VERSION: Number(process.env.EMBEDDING_VERSION || 1),
+  VECTOR_INDEX_NAME: process.env.VECTOR_INDEX_NAME || "deal_embedding_index",
+  RECOMMENDATION_CANDIDATES: Number(process.env.RECOMMENDATION_CANDIDATES || 100),
+  RECOMMENDATION_LIMIT: Number(process.env.RECOMMENDATION_LIMIT || 20),
 };

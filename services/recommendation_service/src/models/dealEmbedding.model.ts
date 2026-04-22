@@ -20,9 +20,10 @@ const dealEmbeddingSchema = new Schema(
     mealType: { type: [String], default: [] },
     isHot: { type: Boolean, default: false },
     viewsCount: { type: Number, default: 0 },
-
     brandName: { type: String, default: null },
     locations: { type: [String], default: [] },
+    endTime: { type: Date, default: null, index: true },
+    sourceText: { type: String, required: true },
   },
   { timestamps: true, collection: "deal_embeddings" }
 );

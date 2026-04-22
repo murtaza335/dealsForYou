@@ -1,55 +1,112 @@
-import amqplib from 'amqplib';
-import { buildDealText } from '../utils/dealTextBuilder.js';
-import { embeddingService } from './embeddingService.js';
+import amqplib, { type Channel, type ChannelModel, type ConsumeMessage } from "amqplib";
+import { buildDealText } from "../utils/dealTextBuilder.js";
+import { embeddingService } from "./embeddingService.js";
+import { env } from "../config/env.js";
 
-let connection: any = null;
-let channel: any = null;
+let connection: ChannelModel | null = null;
+let channel: Channel | null = null;
 
-export async function initRabbitMQSubscriber() {
-  try {
-    connection = await amqplib.connect(process.env.RABBITMQ_URL || 'amqp://localhost');
-    channel = await connection.createChannel();
-    
-    // Declare exchange and queue
-    await channel.assertExchange('deals.events', 'direct', { durable: true });
-    await channel.assertQueue('deals.events.queue', { durable: true });
-    await channel.bindQueue('deals.events.queue', 'deals.events', 'deal_created');
-    
-    console.log('RabbitMQ subscriber listening on deals.events.queue');
-    
-    // Consume messages
-    channel.consume('deals.events.queue', async (msg: any) => {
-      if (msg) {
-        try {
-          const payload = JSON.parse(msg.content.toString());
-          
-          if (payload.eventType === 'deal_created') {
-            const { dealId, dealData, brandId } = payload;
-            
-            // Build text
-            const brand = { name: dealData.brandName || 'Unknown' };
-            const text = buildDealText(dealData, brand);
-            
-            // Generate and store embedding
-            await embeddingService.embedAndStore(dealId, text);
-            
-            // Acknowledge message
-            channel.ack(msg);
-            console.log(`✓ Embedded deal ${dealId}`);
-          }
-        } catch (err) {
-          console.error('Error processing deal event:', err);
-          channel.nack(msg); // Reject and requeue
-        }
-      }
-    }, { noAck: false });
-  } catch (err) {
-    console.error('Failed to init RabbitMQ subscriber:', err);
-    throw err;
-  }
+type DealEventPayload = {
+  eventType: "deal_created" | "deal_updated" | "deal_status_changed";
+  dealId: string;
+  brandId: string;
+  dealData: {
+    title: string;
+    description?: string;
+    price: number;
+    discountPercent?: number;
+    minPersons?: number;
+    maxPersons?: number;
+    cuisineTags?: string[];
+    mealType?: string[];
+    isHot?: boolean;
+    viewsCount?: number;
+    isActive?: boolean;
+    isExpired?: boolean;
+    endTime?: string | Date | null;
+    brandName?: string;
+    locations?: string[];
+  };
+};
+
+async function handleMessage(msg: ConsumeMessage) {
+  const payload = JSON.parse(msg.content.toString()) as DealEventPayload;
+  const { dealId, brandId, dealData } = payload;
+
+  const text = buildDealText(
+    {
+      title: dealData.title,
+      description: dealData.description,
+      price: dealData.price,
+      discountPercent: dealData.discountPercent,
+      cuisineTags: dealData.cuisineTags,
+      mealType: dealData.mealType,
+      minPersons: dealData.minPersons,
+      maxPersons: dealData.maxPersons,
+      endTime: dealData.endTime,
+      locations: dealData.locations,
+    },
+    { name: dealData.brandName || "Unknown brand" }
+  );
+
+  await embeddingService.embedAndStoreDeal({
+    dealId,
+    brandId,
+    brandName: dealData.brandName || "Unknown brand",
+    title: dealData.title,
+    description: dealData.description,
+    price: dealData.price,
+    discountPercent: dealData.discountPercent,
+    minPersons: dealData.minPersons,
+    maxPersons: dealData.maxPersons,
+    cuisineTags: dealData.cuisineTags,
+    mealType: dealData.mealType,
+    isHot: dealData.isHot,
+    viewsCount: dealData.viewsCount,
+    isActive: dealData.isActive,
+    isExpired: dealData.isExpired,
+    endTime: dealData.endTime,
+    locations: dealData.locations,
+    text,
+  });
 }
 
-export async function closeSubscriber() {
-  if (channel) await channel.close();
-  if (connection) await connection.close();
+export async function initRabbitMQSubscriber(): Promise<void> {
+  connection = await amqplib.connect(env.RABBITMQ_URL);
+  channel = await connection.createChannel();
+
+  await channel.assertExchange("deals.events", "direct", { durable: true });
+  await channel.assertQueue("recommendation.deals.embedding.queue", { durable: true });
+
+  await channel.bindQueue("recommendation.deals.embedding.queue", "deals.events", "deal_created");
+  await channel.bindQueue("recommendation.deals.embedding.queue", "deals.events", "deal_updated");
+  await channel.bindQueue("recommendation.deals.embedding.queue", "deals.events", "deal_status_changed");
+
+  await channel.consume(
+    "recommendation.deals.embedding.queue",
+    async (msg) => {
+      if (!msg || !channel) return;
+
+      try {
+        await handleMessage(msg);
+        channel.ack(msg);
+      } catch (error) {
+        console.error("Embedding consumer failed:", error);
+        channel.nack(msg, false, true);
+      }
+    },
+    { noAck: false }
+  );
+}
+
+export async function closeSubscriber(): Promise<void> {
+  if (channel) {
+    await channel.close();
+    channel = null;
+  }
+
+  if (connection) {
+    await connection.close();
+    connection = null;
+  }
 }

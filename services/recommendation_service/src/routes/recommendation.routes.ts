@@ -1,115 +1,102 @@
-import express from 'express';
-import { UserEventModel } from '../models/userEvent.model.js';
-import { DealEmbeddingModel } from '../models/dealEmbedding.model.js';
+import express from "express";
+import { DealEmbeddingModel } from "../models/dealEmbedding.model.js";
+import { rebuildUserProfile } from "../services/userProfile.service.js";
+import { env } from "../config/env.js";
 
 const router = express.Router();
 
-/**
- * Build a user preference vector from their interaction history.
- * Weights: click (0.55) > view (0.30) > search (0.15)
- * Why: Recent clicks stronger signal than old views.
- */
-async function buildUserVector(userId: string): Promise<number[] | null> {
-  const events = await UserEventModel.find({ userId })
-    .sort({ occurredAt: -1 })
-    .limit(100); // Use last 100 events
+function scoreStructured(
+  doc: {
+    price: number;
+    minPersons: number;
+    maxPersons: number;
+    isHot: boolean;
+    viewsCount: number;
+    updatedAt?: Date;
+  },
+  userSignals: { views: number; clicks: number; searches: number }
+) {
+  const popularityScore = Math.min(1, (doc.viewsCount || 0) / 100);
+  const hotScore = doc.isHot ? 1 : 0;
+  const freshnessScore = doc.updatedAt
+    ? Math.max(0, 1 - (Date.now() - new Date(doc.updatedAt).getTime()) / (1000 * 60 * 60 * 24 * 30))
+    : 0.5;
 
-  if (events.length === 0) {
-    return null; // Cold start
-  }
+  const interactionStrength =
+    Math.min(1, (userSignals.views + userSignals.clicks * 2 + userSignals.searches) / 20);
 
-  // Fetch embeddings for all interacted deals
-  const dealIds = events
-    .map(e => e.dealId)
-    .filter((id): id is string => id !== null && id !== undefined);
-  
-  if (dealIds.length === 0) {
-    return null; // No valid deals interacted with
-  }
-  
-  const embeddings = await DealEmbeddingModel.find({ dealId: { $in: dealIds } });
-
-  // Create a map for quick lookup
-  const embeddingMap = new Map(embeddings.map(e => [e.dealId, e.embedding]));
-
-  // Weighted average
-  let sumVector = new Array(384).fill(0);
-  let totalWeight = 0;
-
-  events.forEach((event) => {
-    if (!event.dealId) return; // Skip null dealIds
-    const embedding = embeddingMap.get(event.dealId);
-    if (!embedding) return;
-
-    const weight =
-      event.action === 'click_view_detail'
-        ? 0.55
-        : event.action === 'deal_view'
-          ? 0.30
-          : event.action === 'search_query'
-            ? 0.15
-            : 0.1;
-    embedding.forEach((val, idx) => {
-      sumVector[idx] += val * weight;
-    });
-    totalWeight += weight;
-  });
-
-  // Normalize
-  if (totalWeight === 0) return null;
-  sumVector = sumVector.map(v => v / totalWeight);
-  return sumVector;
+  return 0.4 * popularityScore + 0.2 * hotScore + 0.2 * freshnessScore + 0.2 * interactionStrength;
 }
 
-/**
- * GET /api/recommendations/:userId
- * Returns top-K semantically similar deals.
- */
-router.get('/recommendations/:userId', async (req, res) => {
+router.post("/recommendations/refresh/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    const { k = 20 } = req.query; // Top-K results
+    const limit = Number(req.body?.limit || env.RECOMMENDATION_LIMIT);
+    const numCandidates = Number(req.body?.numCandidates || env.RECOMMENDATION_CANDIDATES);
 
-    // Build user vector
-    const userVector = await buildUserVector(userId);
+    const profile = await rebuildUserProfile(userId);
 
-    if (!userVector) {
-      // Cold start: return empty or hot deals
+    if (profile.coldStart || !profile.profileVector) {
       return res.json({
-        recommendations: [],
+        recommendedDealIds: [],
         coldStart: true,
-        message: 'No interaction history. Please view some deals.',
+        computedAt: new Date().toISOString(),
+        reasonCodes: ["NO_INTERACTION_HISTORY"],
       });
     }
 
-    // Query Atlas vector search
-    const results = await DealEmbeddingModel.aggregate([
+    const candidates = await DealEmbeddingModel.aggregate([
       {
-        $search: {
-          cosmosSearch: {
-            vector: userVector,
-            k: parseInt(k as string),
+        $vectorSearch: {
+          index: env.VECTOR_INDEX_NAME,
+          path: "embedding",
+          queryVector: profile.profileVector,
+          numCandidates,
+          limit: Math.max(limit * 3, limit),
+          filter: {
+            isActive: true,
+            isExpired: false,
           },
-          returnStoredSource: true,
         },
       },
       {
         $project: {
-          similarityScore: { $meta: 'searchScore' },
           dealId: 1,
-          embedding: 1,
+          price: 1,
+          minPersons: 1,
+          maxPersons: 1,
+          isHot: 1,
+          viewsCount: 1,
+          updatedAt: 1,
+          semanticScore: { $meta: "vectorSearchScore" },
         },
       },
     ]);
 
+    const ranked = candidates
+      .map((doc) => {
+        const structured = scoreStructured(doc, profile.signalsUsed);
+        const finalScore = 0.7 * doc.semanticScore + 0.3 * structured;
+        return {
+          dealId: doc.dealId,
+          semanticScore: doc.semanticScore,
+          structuredScore: structured,
+          finalScore,
+        };
+      })
+      .sort((a, b) => b.finalScore - a.finalScore)
+      .slice(0, limit);
+
     res.json({
-      recommendations: results,
+      recommendedDealIds: ranked.map((r) => r.dealId),
       coldStart: false,
-      userVectorDim: userVector.length,
+      computedAt: new Date().toISOString(),
+      reasonCodes: ["HYBRID_VECTOR_RERANK"],
+      debug: ranked,
     });
   } catch (err) {
-    console.error('Recommendations error:', err);
-    res.status(500).json({ error: 'Failed to fetch recommendations' });
+    console.error("Recommendations error:", err);
+    res.status(500).json({ error: "Failed to fetch recommendations" });
   }
 });
 

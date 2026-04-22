@@ -1,81 +1,81 @@
-import { pipeline } from '@xenova/transformers';
-import { createHash } from 'crypto';
-import { DealEmbeddingModel } from '../models/dealEmbedding.model.js';
+import { pipeline } from "@xenova/transformers";
+import { createHash } from "crypto";
+import { DealEmbeddingModel } from "../models/dealEmbedding.model.js";
+import { env } from "../config/env.js";
 
-let embeddingPipeline: any = null;
+let embeddingPipeline: Awaited<ReturnType<typeof pipeline>> | null = null;
 
-/**
- * Lazy-load the embedding model on first call.
- * Why: Model file (~80MB) loads to memory only once, reused for all calls.
- */
 async function getEmbeddingPipeline() {
   if (!embeddingPipeline) {
-    console.log('Loading all-MiniLM-L6-v2 model...');
-    embeddingPipeline = await pipeline(
-      'feature-extraction',
-      'Xenova/all-MiniLM-L6-v2'
-    );
-    console.log('Model loaded.');
+    embeddingPipeline = await pipeline("feature-extraction", env.EMBEDDING_MODEL);
   }
   return embeddingPipeline;
 }
 
+export type EmbedDealPayload = {
+  dealId: string;
+  brandId: string;
+  brandName: string;
+  title: string;
+  description?: string;
+  price: number;
+  discountPercent?: number;
+  minPersons?: number;
+  maxPersons?: number;
+  cuisineTags?: string[];
+  mealType?: string[];
+  isHot?: boolean;
+  viewsCount?: number;
+  isActive?: boolean;
+  isExpired?: boolean;
+  endTime?: Date | string | null;
+  locations?: string[];
+  text: string;
+};
+
 export class EmbeddingService {
-  /**
-   * Generate embedding for text.
-   * Input: text (string)
-   * Output: vector (384-dim array of floats)
-   * Why separate from storage: testable, reusable.
-   */
   async generateEmbedding(text: string): Promise<number[]> {
     const pipe = await getEmbeddingPipeline();
-    
     const output = await pipe(text, {
-      pooling: 'mean', // Average token embeddings
-      normalize: true, // L2 normalization for cosine similarity
+      pooling: "mean",
+      normalize: true,
     });
-    
-    // Convert tensor to Array
     return Array.from(output.data) as number[];
   }
 
-  /**
-   * Generate embedding and store in MongoDB.
-   * Input: dealId (string), text (string)
-   * Side effect: Creates or updates deal_embeddings doc
-   */
-  async embedAndStore(dealId: string, text: string): Promise<void> {
-    const embedding = await this.generateEmbedding(text);
-    const textHash = createHash('sha256').update(text).digest('hex');
+  async embedAndStoreDeal(payload: EmbedDealPayload): Promise<void> {
+    const embedding = await this.generateEmbedding(payload.text);
+    const textHash = createHash("sha256").update(payload.text).digest("hex");
 
     await DealEmbeddingModel.updateOne(
-      { dealId },
+      { dealId: payload.dealId },
       {
         $set: {
-          dealId,
-          embedding, // 384-dim vector
-          embeddingModel: 'all-MiniLM-L6-v2',
-          embeddingVersion: 1,
-          textHash, // If text changes, you know embedding is stale
+          dealId: payload.dealId,
+          brandId: payload.brandId,
+          brandName: payload.brandName,
+          embedding,
+          embeddingModel: env.EMBEDDING_MODEL,
+          embeddingVersion: env.EMBEDDING_VERSION,
+          textHash,
+          sourceText: payload.text,
+          isActive: payload.isActive ?? true,
+          isExpired: payload.isExpired ?? false,
+          price: payload.price,
+          discountPercent: payload.discountPercent ?? 0,
+          minPersons: payload.minPersons ?? 1,
+          maxPersons: payload.maxPersons ?? 1,
+          cuisineTags: payload.cuisineTags ?? [],
+          mealType: payload.mealType ?? [],
+          isHot: payload.isHot ?? false,
+          viewsCount: payload.viewsCount ?? 0,
+          locations: payload.locations ?? [],
+          endTime: payload.endTime ? new Date(payload.endTime) : null,
           updatedAt: new Date(),
         },
       },
       { upsert: true }
     );
-
-    console.log(`✓ Embedded deal ${dealId}`);
-  }
-
-  /**
-   * Batch embed multiple texts (for backfill).
-   * Why: Control parallelism to avoid memory issues.
-   */
-  async embedBatch(items: { dealId: string; text: string }[], batchSize = 5): Promise<void> {
-    for (let i = 0; i < items.length; i += batchSize) {
-      const batch = items.slice(i, i + batchSize);
-      await Promise.all(batch.map(item => this.embedAndStore(item.dealId, item.text)));
-      console.log(`Progress: ${Math.min(i + batchSize, items.length)}/${items.length}`);
-    }
   }
 }
 
