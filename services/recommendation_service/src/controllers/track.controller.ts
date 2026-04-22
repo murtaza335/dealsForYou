@@ -1,19 +1,61 @@
-import type { NextFunction, Request, Response } from "express";
-import { trackService } from "../services/track.service.js";
+import { Request, Response } from "express";
+import { UserEventModel } from "../models/userEvent.model.js";
 
-export const trackClick = async (req: Request, res: Response, next: NextFunction) => {
+/**
+ * Track when user clicks "View Details" on a deal card.
+ * Payload: { userId, dealId }
+ */
+export async function trackViewDetail(req: Request, res: Response) {
   try {
-    const dealId = Number(req.body?.dealId);
-    const userId = typeof req.body?.userId === "string" && req.body.userId.trim().length > 0 ? req.body.userId.trim() : null;
+    const { userId, dealId, source, dwellTime } = req.body;
 
-    const savedClick = await trackService.trackClick({ dealId, userId });
+    if (!userId || !dealId) {
+      return res.status(400).json({ error: "Missing userId or dealId" });
+    }
 
-    return res.status(201).json({
-      success: true,
-      message: "Click tracked successfully.",
-      data: savedClick,
+    const event = await UserEventModel.create({
+      userId,
+      dealId,
+      action: "click_view_detail",
+      metadata: {
+        source: source || "unknown", // "recommended", "top", "filtered"
+        dwellTime: dwellTime || 0,
+      },
+      occurredAt: new Date(),
     });
-  } catch (error) {
-    next(error);
+
+    res.json({ success: true, eventId: String((event as any)._id) });
+  } catch (err) {
+    console.error("Error tracking view-detail:", err);
+    res.status(500).json({ error: "Failed to track event" });
   }
-};
+}
+
+/**
+ * Track when user clicks external link to restaurant site.
+ * Payload: { userId, dealId, url }
+ */
+export async function trackExternalLink(req: Request, res: Response) {
+  try {
+    const { userId, dealId, url } = req.body;
+
+    if (!userId || !dealId) {
+      return res.status(400).json({ error: "Missing userId or dealId" });
+    }
+
+    const event = await UserEventModel.create({
+      userId,
+      dealId,
+      action: "click_external_link",
+      metadata: {
+        url: url || null,
+      },
+      occurredAt: new Date(),
+    });
+
+    res.json({ success: true, eventId: String((event as any)._id) });
+  } catch (err) {
+    console.error("Error tracking external-link:", err);
+    res.status(500).json({ error: "Failed to track event" });
+  }
+}
