@@ -173,7 +173,10 @@ function DealsPage({ onSignOut }: DealsPageProps) {
     try {
       await fetch(`${VITE_RECOMMENDATION_URL}/api/track/view-detail`, {
         method: "POST",
-        body: JSON.stringify({ userId: user.id, dealId: deal.id, source: "dashboard" })
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: user?.id, dealId, source: "dashboard" })
       });
     } catch (err) {
       console.error("Failed to track click: ", err);

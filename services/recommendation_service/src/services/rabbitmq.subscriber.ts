@@ -75,6 +75,22 @@ export async function initRabbitMQSubscriber(): Promise<void> {
   connection = await amqplib.connect(env.RABBITMQ_URL);
   channel = await connection.createChannel();
 
+  connection.on("error", (error) => {
+    console.error("RabbitMQ connection error:", error);
+  });
+
+  connection.on("close", () => {
+    console.warn("RabbitMQ connection closed.");
+  });
+
+  channel.on("error", (error) => {
+    console.error("RabbitMQ channel error:", error);
+  });
+
+  channel.on("close", () => {
+    console.warn("RabbitMQ channel closed.");
+  });
+
   await channel.assertExchange("deals.events", "direct", { durable: true });
   await channel.assertQueue("recommendation.deals.embedding.queue", { durable: true });
 

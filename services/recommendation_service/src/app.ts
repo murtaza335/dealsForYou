@@ -5,6 +5,7 @@ import { notFoundHandler } from "./middlewares/notFoundHandler.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { trackRouter } from "./routes/track.routes.js";
 import recommendationRouter from "./routes/recommendation.routes.js";
+import debugRouter from "./routes/debug.routes.js";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/track", trackRouter);
 app.use("/api", recommendationRouter);
+app.use("/api/debug", debugRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

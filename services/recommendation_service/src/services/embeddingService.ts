@@ -3,7 +3,8 @@ import { createHash } from "crypto";
 import { DealEmbeddingModel } from "../models/dealEmbedding.model.js";
 import { env } from "../config/env.js";
 
-let embeddingPipeline: Awaited<ReturnType<typeof pipeline>> | null = null;
+let embeddingPipeline: any = null;
+
 
 async function getEmbeddingPipeline() {
   if (!embeddingPipeline) {
@@ -36,11 +37,13 @@ export type EmbedDealPayload = {
 export class EmbeddingService {
   async generateEmbedding(text: string): Promise<number[]> {
     const pipe = await getEmbeddingPipeline();
-    const output = await pipe(text, {
+
+    const output = await (pipe as any)(text, {
       pooling: "mean",
       normalize: true,
     });
-    return Array.from(output.data) as number[];
+
+    return Array.from(output.data as Float32Array);
   }
 
   async embedAndStoreDeal(payload: EmbedDealPayload): Promise<void> {
@@ -78,5 +81,6 @@ export class EmbeddingService {
     );
   }
 }
+
 
 export const embeddingService = new EmbeddingService();
