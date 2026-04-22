@@ -4,6 +4,7 @@ import { LogModel } from "../models/logs.js";
 import { LogDocument } from "../models/logs.js";
 import { DealDocument } from "../models/deal.model.js";
 import { BrandDocument, BrandModel } from "../models/brands.model.js";
+import { v4 as uuidv4 } from "uuid";
 
 // const brandSchema = new Schema<BrandDocument>(
 //   {
@@ -66,166 +67,202 @@ export class DealRepository {
   // 5. incrementDealViews(dealId) - this will increment the views count for a given deal id by 1
   // 6. markHotDeals() - this will be a function that will be called by a background job to mark the hot deals based on the views count and the discount percent or any other criteria we want to use to determine if a deal is hot or not.
 
-  async updateOrInsertBrand(brandInfo: { name: string; slug: string; baseUrl: string; isActive?: boolean; tagline?: string; description?: string; logoUrl?: string; website?: string; cities?: string[]; areas?: string[]; locations?: { lat: number; lng: number }[]; country?: string }): Promise<BrandDocument> {
+  async updateOrInsertBrand(
+    brandInfo: { name: string; slug: string; baseUrl: string }
+  ): Promise<BrandDocument> {
 
-    // to avoid race conditions where multiple messages for the same brand come in at the same time we will be using findOneAndUpdate with upsert option to atomically find or create the brand document
     const brand = await BrandModel.findOneAndUpdate(
       { slug: brandInfo.slug },
-      { $setOnInsert: { ...brandInfo, publishedAt: new Date() } },
-      { new: true, upsert: true }
+      {
+        $set: {
+          ...brandInfo
+        },
+        $setOnInsert: {
+          publishedAt: new Date()
+        }
+      },
+      {
+        returnDocument: "after",
+        upsert: true,
+        runValidators: true
+      }
     );
+
+    if (!brand) {
+      throw new Error("Brand upsert failed");
+    }
+    console.log("Upserted brand:", brand.slug, brand._id);
 
     return brand;
   }
 
-  async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
+async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
+  console.log(
+    `[DealSync] Started | brandId=${brandId} | incomingDeals=${deals?.length ?? 0}`
+  );
 
-    // argument validation
-    if (!mongoose.Types.ObjectId.isValid(brandId)) {
-      throw new Error(`Invalid brandId: ${brandId}`);
+  if (!mongoose.Types.ObjectId.isValid(brandId)) {
+    throw new Error(`Invalid brandId: ${brandId}`);
+  }
+
+  const brandObjectId = new mongoose.Types.ObjectId(brandId);
+  const now = new Date();
+
+  console.log(
+    `[DealSync] Target | db=${DealModel.db.name} | collection=${DealModel.collection.name}`
+  );
+
+  const validDeals = new Map<string, DealDocument>();
+  let skippedCount = 0;
+
+  for (const [index, raw] of deals.entries()) {
+    if (!raw) {
+      console.log(`[DealSync] Skip null payload | idx=${index + 1}`);
+      skippedCount += 1;
+      continue;
     }
 
-    const brandObjectId = new mongoose.Types.ObjectId(brandId);
-    const now = new Date();
+    const externalId = String((raw as any).externalId ?? "").trim();
 
-    // deduplicated deals
-    const dedupedDeals = new Map<string, DealDocument>();
-
-    // payload verification
-    for (const deal of deals) {
-      if (!deal.externalId || typeof deal.externalId !== "string") {
-        throw new Error(`Invalid deal payload: externalId is required for brand ${brandId}`);
-      }
-
-      const endTime = new Date(deal.endTime);
-      if (Number.isNaN(endTime.getTime())) {
-        throw new Error(`Invalid deal payload: endTime is invalid for externalId ${deal.externalId}`);
-      }
-
-      //to delete the duplicates if any
-      dedupedDeals.set(deal.externalId, deal);
+    if (!externalId) {
+      console.log(`[DealSync] Skip: missing externalId | idx=${index + 1}`);
+      skippedCount += 1;
+      continue;
     }
 
-    const incomingExternalIds = [...dedupedDeals.keys()];
+    if (!raw.title || raw.price == null) {
+      console.log(`[DealSync] Skip invalid deal | externalId=${externalId}`);
+      skippedCount += 1;
+      continue;
+    }
 
-    // mappig each exteranlId to the updateOne operation. 
-    const upsertOperations = incomingExternalIds.map((externalId) => {
-      const deal = dedupedDeals.get(externalId)!;
+    const endTime = raw.endTime ? new Date(raw.endTime) : null;
+    if (endTime && isNaN(endTime.getTime())) {
+      console.log(`[DealSync] Skip invalid endTime | externalId=${externalId}`);
+      skippedCount += 1;
+      continue;
+    }
 
-      // isExpired and isActive logic 
-      // if the deal's endTime not mentioned its not expired.
-      // if the deal's endTime is in the past then its expired.
-      // if the deal's startTime is in the future then its not active.
-      let isExpired = false;
-      let isActive = true;
+    validDeals.set(externalId, raw);
+  }
 
-      if (deal.endTime) {
-        const endTime = new Date(deal.endTime);
-        isExpired = endTime <= now;
-      }
+  const incomingExternalIds = [...validDeals.keys()];
+  console.log(
+    `[DealSync] Prepared | valid=${incomingExternalIds.length} | skipped=${skippedCount}`
+  );
 
-      if (deal.startTime) {
-        const startTime = new Date(deal.startTime);
-        if (startTime > now) {
-          isActive = false;
-        }
-      }
+  const bulkOps = incomingExternalIds.map((externalId) => {
+    const raw = validDeals.get(externalId)!;
+    const endTime = raw.endTime ? new Date(raw.endTime) : null;
+    const startTime = raw.startTime ? new Date(raw.startTime) : null;
 
-      if (isExpired) {
-        isActive = false;
-      }
+    let isExpired = endTime ? endTime <= now : false;
+    let isActive = startTime ? startTime <= now : true;
+    if (isExpired) isActive = false;
 
-
-      return {
-        updateOne: {
-          filter: { brandId: brandObjectId, externalId: externalId },
-          update: {
-            $set: {
-              brandId: brandObjectId,
-              externalId: externalId,
-              title: deal.title,
-              description: deal.description,
-              price: deal.price,
-              originalPrice: deal.originalPrice,
-              currency: deal.currency,
-              discountPercent: deal.discountPercent,
-              minPersons: deal.minPersons,
-              maxPersons: deal.maxPersons,
-              cuisineTags: deal.cuisineTags,
-              mealType: deal.mealType,
-              conditions: deal.conditions,
-              startTime: deal.startTime,
-              endTime: deal.endTime,
-              isExpired: isExpired,
-              isActive: isActive,
-              scrapedAt: now
-            }
+    return {
+      updateOne: {
+        filter: { brandId: brandObjectId, externalId },
+        update: {
+          $setOnInsert: {
+            dealId: uuidv4(),
           },
-          upsert: true
-        }
-      };
-    });
-
-    const deactivateFilter = incomingExternalIds.length > 0
-      ? { brandId: brandObjectId, externalId: { $nin: incomingExternalIds } }
-      : { brandId: brandObjectId };
-
-
-      // here the session logic is implemented to ensure that the upsert operations and the deactivate operations are atomic and to avoid race conditions
-    const runSync = async (useTransaction: boolean) => {
-      if (!useTransaction) {
-        if (upsertOperations.length > 0) {
-          await DealModel.bulkWrite(upsertOperations, { ordered: false });
-        }
-
-        // deactivating the deals that are not present in the incoming payload.
-        await DealModel.updateMany(
-          deactivateFilter,
-          { $set: { isActive: false } }
-        );
-        return;
-      }
-
-      // use Transaction
-      const session = await DealModel.db.startSession();
-      try {
-        await session.withTransaction(async () => {
-          if (upsertOperations.length > 0) {
-            await DealModel.bulkWrite(upsertOperations, { ordered: false, session: session });
-          }
-
-          // deactivating the deals that are not present in the incoming payload.
-          await DealModel.updateMany(
-            deactivateFilter,
-            { $set: { isActive: false } },
-            { session: session }
-          );
-        });
-      } finally {
-        await session.endSession();
-      }
+          $set: {
+            brandId: brandObjectId,
+            externalId,
+            title: raw.title,
+            description: raw.description ?? "",
+            price: raw.price,
+            originalPrice: raw.originalPrice ?? undefined,
+            currency: raw.currency ?? "PKR",
+            discountPercent: raw.discountPercent ?? undefined,
+            minPersons: raw.minPersons ?? undefined,
+            maxPersons: raw.maxPersons ?? undefined,
+            cuisineTags: Array.isArray(raw.cuisineTags) ? raw.cuisineTags : [],
+            mealType: Array.isArray(raw.mealType) ? raw.mealType : [],
+            conditions: raw.conditions ?? undefined,
+            startTime: startTime ?? undefined,
+            endTime: endTime ?? undefined,
+            isExpired,
+            isActive,
+            scrapedAt: now,
+          },
+        },
+        upsert: true,
+      },
     };
+  });
 
-    const maxRetries = 2;
-    for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
-      try {
-        await runSync(true);
-        return;
-      } catch (error) {
-        if (this.isTransactionUnsupportedError(error)) {
-          await runSync(false);
-          return;
-        }
+  if (bulkOps.length > 0) {
+    try {
+      const bulkResult = await DealModel.bulkWrite(bulkOps, { ordered: false });
+      console.log(
+        `[DealSync] Bulk result | matched=${bulkResult.matchedCount} | modified=${bulkResult.modifiedCount} | upserted=${bulkResult.upsertedCount}`
+      );
+    } catch (error) {
+      const mongoError = error as {
+        message?: string;
+        code?: number;
+        writeErrors?: Array<{ code?: number; errmsg?: string }>;
+      };
 
-        const shouldRetry = this.isRetryableSyncError(error) && attempt < maxRetries;
-        if (shouldRetry) {
-          continue;
-        }
+      console.error(
+        `[DealSync] Bulk upsert failed | code=${mongoError.code ?? "n/a"} | message=${mongoError.message ?? "unknown"}`
+      );
 
+      const writeErrors = mongoError.writeErrors ?? [];
+      const onlyDuplicateErrors =
+        writeErrors.length > 0 && writeErrors.every((entry) => entry.code === 11000);
+
+      if (!onlyDuplicateErrors) {
         throw error;
       }
+
+      console.warn(
+        `[DealSync] Bulk had duplicate-key races | retrying as update-only ops=${writeErrors.length}`
+      );
+
+      await DealModel.bulkWrite(
+        bulkOps.map((op) => ({
+          updateOne: {
+            filter: op.updateOne.filter,
+            update: op.updateOne.update,
+            upsert: false,
+          },
+        })),
+        { ordered: false }
+      );
     }
   }
+
+  console.log(
+    `[DealSync] Deactivate missing | validIncomingExternalIds=${incomingExternalIds.length}`
+  );
+
+  const deactivateResult = await DealModel.updateMany(
+    {
+      brandId: brandObjectId,
+      externalId: { $nin: incomingExternalIds },
+    },
+    {
+      $set: { isActive: false },
+    }
+  );
+
+  const persistedCount = await DealModel.countDocuments({ brandId: brandObjectId });
+
+  console.log(
+    `[DealSync] Deactivate result | matched=${deactivateResult.matchedCount} | modified=${deactivateResult.modifiedCount}`
+  );
+  console.log(
+    `[DealSync] Summary | attempted=${deals.length} | valid=${incomingExternalIds.length} | skipped=${skippedCount} | persistedCount=${persistedCount}`
+  );
+
+  console.log(`[DealSync] DONE | brandId=${brandId}`);
+}
+
+
+
 
   async getActiveDealsForBrand(brandId: string): Promise<DealDocument[]> {
     return await DealModel.find({ brandId: brandId, isActive: true });
