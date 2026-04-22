@@ -29,32 +29,6 @@ export class ScraperTriggerQueue {
     await channel.bindQueue(this.queue, this.exchange, "");
   }
 
-  async hardReset(): Promise<void> {
-      if (!this.channel) await this.init();
-    const channel = this.channel;
-
-    if (!channel) {
-      throw new Error("RabbitMQ channel is not initialized");
-    }
-
-    console.log("Starting hard reset of RabbitMQ structures...");
-
-    // 1. Delete the exchange (kills all messages currently waiting on timers)
-    await channel.deleteExchange(this.exchange);
-    
-    // 2. Delete the queue (kills all messages already waiting to be processed)
-    await channel.deleteQueue(this.queue);
-
-    // 3. Reset internal state so init() can run fresh
-    this.connection = null;
-    this.channel = null;
-
-    // 4. Re-initialize to recreate the Exchange and Queue for immediate use
-    await this.init();
-
-    console.log("Queue and Exchange have been fully reset and recreated.");
-  }
-
   async scheduleScraper(slug: string, delayMs: number): Promise<void> {
     if (!this.channel) await this.init();
     const channel = this.channel;
