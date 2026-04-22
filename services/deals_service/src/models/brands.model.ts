@@ -18,6 +18,7 @@ import { v4 as uuidv4 } from "uuid";
 // our schema for the brand data that we will be storing in our database
 export interface BrandDocument extends Document<Types.ObjectId> {
   brandId: string; // UUID string
+  imgUrl?: string;
   name: string;
   slug: string;
   baseUrl: string;
@@ -42,6 +43,7 @@ const brandSchema = new Schema<BrandDocument>(
       unique: true,
       default: () => uuidv4() // Generate UUID string
     },
+    imgUrl : {type: String, default: "" },
     name: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
     baseUrl: { type: String, required: true },

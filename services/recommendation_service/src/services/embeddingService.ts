@@ -16,7 +16,7 @@ async function getEmbeddingPipeline() {
 export type EmbedDealPayload = {
   dealId: string;
   brandId: string;
-  brandName: string;
+  brandSlug: string;
   title: string;
   description?: string;
   price: number;
@@ -56,7 +56,7 @@ export class EmbeddingService {
         $set: {
           dealId: payload.dealId,
           brandId: payload.brandId,
-          brandName: payload.brandName,
+          brandName: payload.brandSlug ?? "unknown-brand",
           embedding,
           embeddingModel: env.EMBEDDING_MODEL,
           embeddingVersion: env.EMBEDDING_VERSION,

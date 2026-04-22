@@ -5,6 +5,7 @@ import { LogDocument } from "../models/logs.js";
 import { DealDocument } from "../models/deal.model.js";
 import { BrandDocument, BrandModel } from "../models/brands.model.js";
 import { v4 as uuidv4 } from "uuid";
+import { publishDealCreated } from "../services/rabbitmq.publisher.js";
 
 // const brandSchema = new Schema<BrandDocument>(
 //   {
@@ -170,6 +171,7 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
           $set: {
             brandId: brandObjectId,
             externalId,
+            brandSlug: raw.brandSlug ?? "unknown-brand",
             title: raw.title,
             description: raw.description ?? "",
             price: raw.price,
@@ -194,34 +196,44 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
   });
 
   if (bulkOps.length > 0) {
+  let upsertedIds: string[] = [];
+
+  try {
+    const bulkResult = await DealModel.bulkWrite(bulkOps, { ordered: false });
+    console.log(
+      `[DealSync] Bulk result | matched=${bulkResult.matchedCount} | modified=${bulkResult.modifiedCount} | upserted=${bulkResult.upsertedCount}`
+    );
+
+    // Collect only newly inserted _ids
+    if (bulkResult.upsertedIds && Object.keys(bulkResult.upsertedIds).length > 0) {
+      upsertedIds = Object.values(bulkResult.upsertedIds).map(id => id.toString());
+      console.log(`[DealSync] Collected upsertedIds | count=${upsertedIds.length}`);
+    }
+  } catch (error) {
+    const mongoError = error as {
+      message?: string;
+      code?: number;
+      writeErrors?: Array<{ code?: number; errmsg?: string }>;
+    };
+
+    console.error(
+      `[DealSync] Bulk upsert failed | code=${mongoError.code ?? "n/a"} | message=${mongoError.message ?? "unknown"}`
+    );
+
+    const writeErrors = mongoError.writeErrors ?? [];
+    const onlyDuplicateErrors =
+      writeErrors.length > 0 && writeErrors.every((entry) => entry.code === 11000);
+
+    if (!onlyDuplicateErrors) {
+      throw error;
+    }
+
+    console.warn(
+      `[DealSync] Bulk had duplicate-key races | retrying as update-only ops=${writeErrors.length}`
+    );
+
+    // Retry without upsert (update-only)
     try {
-      const bulkResult = await DealModel.bulkWrite(bulkOps, { ordered: false });
-      console.log(
-        `[DealSync] Bulk result | matched=${bulkResult.matchedCount} | modified=${bulkResult.modifiedCount} | upserted=${bulkResult.upsertedCount}`
-      );
-    } catch (error) {
-      const mongoError = error as {
-        message?: string;
-        code?: number;
-        writeErrors?: Array<{ code?: number; errmsg?: string }>;
-      };
-
-      console.error(
-        `[DealSync] Bulk upsert failed | code=${mongoError.code ?? "n/a"} | message=${mongoError.message ?? "unknown"}`
-      );
-
-      const writeErrors = mongoError.writeErrors ?? [];
-      const onlyDuplicateErrors =
-        writeErrors.length > 0 && writeErrors.every((entry) => entry.code === 11000);
-
-      if (!onlyDuplicateErrors) {
-        throw error;
-      }
-
-      console.warn(
-        `[DealSync] Bulk had duplicate-key races | retrying as update-only ops=${writeErrors.length}`
-      );
-
       await DealModel.bulkWrite(
         bulkOps.map((op) => ({
           updateOne: {
@@ -232,8 +244,58 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
         })),
         { ordered: false }
       );
+      console.log(`[DealSync] Retry completed successfully`);
+    } catch (retryError) {
+      console.error(`[DealSync] Retry failed | error=${(retryError as Error).message}`);
+      throw retryError;
     }
   }
+
+  // Only publish newly upserted deals
+  if (upsertedIds.length > 0) {
+    try {
+      const newDeals = await DealModel.find({ _id: { $in: upsertedIds } });
+      console.log(`[DealSync] Found ${newDeals.length} deals to publish`);
+
+      let publishedCount = 0;
+      let failedCount = 0;
+
+      for (const deal of newDeals) {
+        try {
+          if (!deal.dealId) {
+            console.warn(`[DealSync] Skipping publish: deal missing dealId | _id=${deal._id}`);
+            failedCount += 1;
+            continue;
+          }
+
+          console.log(deal)
+          await publishDealCreated(deal.dealId, deal, brandId);
+          publishedCount += 1;
+        } catch (pubErr) {
+          const errMsg = (pubErr as Error).message ?? "unknown error";
+          console.error(`[DealSync] Failed to publish deal | dealId=${deal.dealId} | error=${errMsg}`);
+          failedCount += 1;
+        }
+      }
+
+      console.log(
+        `[DealSync] Publishing summary | total=${newDeals.length} | published=${publishedCount} | failed=${failedCount}`
+      );
+
+      if (failedCount > 0) {
+        console.warn(
+          `[DealSync] ${failedCount} deals failed to publish | brandId=${brandId}`
+        );
+      }
+    } catch (fetchError) {
+      const errMsg = (fetchError as Error).message ?? "unknown error";
+      console.error(`[DealSync] Failed to fetch upserted deals | error=${errMsg}`);
+      throw fetchError;
+    }
+  } else {
+    console.log(`[DealSync] No new deals to publish | brandId=${brandId}`);
+  }
+}
 
   console.log(
     `[DealSync] Deactivate missing | validIncomingExternalIds=${incomingExternalIds.length}`
@@ -259,20 +321,8 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
   );
 
   console.log(`[DealSync] DONE | brandId=${brandId}`);
-  // Publish each upserted deal to RabbitMQ for embedding
-  const publishedDeals = await DealModel.find({ 
-    brandId: brandObjectId,
-    externalId: { $in: incomingExternalIds }
-  });
 
-  for (const deal of publishedDeals) {
-    try {
-      const { publishDealCreated } = await import('../services/rabbitmq.publisher.js');
-      await publishDealCreated(deal.dealId, deal.toObject(), brandId);
-    } catch (err) {
-      console.error(`Failed to publish deal ${deal.dealId}:`, err);
-    }
-  }
+  
 }
 
 

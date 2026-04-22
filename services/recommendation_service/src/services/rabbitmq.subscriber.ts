@@ -52,7 +52,7 @@ async function handleMessage(msg: ConsumeMessage) {
   await embeddingService.embedAndStoreDeal({
     dealId,
     brandId,
-    brandName: dealData.brandName || "Unknown brand",
+    brandSlug: dealData.brandName ?? "unknown-brand",
     title: dealData.title,
     description: dealData.description,
     price: dealData.price,

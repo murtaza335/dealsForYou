@@ -30,6 +30,7 @@ import { v4 as uuidv4 } from "uuid";
 export interface DealDocument extends Document {
   dealId: string; // UUID string
   brandId: Types.ObjectId; // Reference to Brand
+  brandSlug: string; // denormalized for easier querying without needing to populate brand
   externalId: string; // Unique ID from scraper per brand
   title: string;
   description?: string;
@@ -47,6 +48,7 @@ export interface DealDocument extends Document {
   isExpired: boolean;
   isActive: boolean;
   isHot: boolean;
+  imgUrl?: string;
   viewsCount: number;
   scrapedAt?: Date;
 }
@@ -60,6 +62,7 @@ const dealSchema = new Schema<DealDocument>(
       default: () => uuidv4() // Generate UUID string
     },
     brandId: { type: Schema.Types.ObjectId, ref: "Brand", required: true },
+    brandSlug: { type: String, required: true }, // for easier querying without needing to populate brand
     externalId: { type: String, required: true },
     title: { type: String },
     description: { type: String },
@@ -85,6 +88,7 @@ const dealSchema = new Schema<DealDocument>(
     isHot: { type: Boolean, default: false },
     viewsCount: { type: Number, default: 0 },
     scrapedAt: { type: Date },
+    imgUrl: { type: String, default: "" },
   },
   { timestamps: true }
 );
