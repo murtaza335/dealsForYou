@@ -12,9 +12,6 @@ const start = async () => {
   //connect to the database first before starting the scraper service
   await connectDB();
 
-  // Perform the nuclear reset before doing anything else to clear out any old messages that might be stuck in the queue from previous runs
-  //await scraperTriggerQueue.hardReset();
-
   //run the scraper once on startup to have some initial data in the database before the scheduled jobs start running 
   const scraperService = new ScraperService();
 
@@ -22,7 +19,7 @@ const start = async () => {
   await scraperService.run();
 
 
-  //calling the startjobs do that it run after each 2 hours (120 mins)
+  //calling the startjobs do that it run after each 24 hours (1440 mins)
   console.log(`Scheduling scraper with interval: ${ENV.SCRAPER_INTERVAL}`);
 
   startJobs(ENV.SCRAPER_INTERVAL);
