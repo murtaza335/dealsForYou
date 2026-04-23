@@ -4,8 +4,8 @@ export interface Deal {
   title: string;
   description: string;
   price: number;
-  image: string;
-  brand: string;
+  imgUrl: string;
+  brandSlug: string;
 }
 
 export interface ApiResponse {
@@ -32,6 +32,6 @@ export const buildQuery = (params: Record<string, string | undefined>) => {
 export const formatPrice = (price: number) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: "INR",
+    currency: "PKR",
     maximumFractionDigits: 0,
   }).format(price);

@@ -37,9 +37,9 @@ export function DealsDashboard() {
   const userId = user?.id;
 
   const [brand, setBrand] = useState("");
-  const [category, setCategory] = useState("");
+  const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const [search, setSearch] = useState("");
+  const [query, setQuery] = useState("");
 
   const [filteredDeals, setFilteredDeals] = useState<Deal[]>([]);
   const [recommendedDeals, setRecommendedDeals] = useState<Deal[]>([]);
@@ -60,27 +60,29 @@ export function DealsDashboard() {
     setErrorMessage(null);
 
     try {
-      const query = buildQuery({
-        brand,
-        category,
+      const queryParam = buildQuery({
+        minPrice,
         maxPrice,
-        search,
+        query,
+        brand,
       });
 
-      const response = await fetch(`${apiBaseUrl}/api/deals/filtered?${query}`);
+      const response = await fetch(`${apiBaseUrl}/api/deals/filtered?${queryParam}`);
       if (!response.ok) {
         throw new Error("Could not fetch filtered deals.");
       }
 
       const payload: ApiResponse = await response.json();
       setFilteredDeals(payload.data ?? []);
+      console.log(payload, 2, null)
     } catch (error) {
+      console.log(error)
       setErrorMessage(error instanceof Error ? error.message : "Unexpected error.");
       setFilteredDeals([]);
     } finally {
       setLoadingFiltered(false);
     }
-  }, [brand, category, maxPrice, search]);
+  }, [brand, minPrice, maxPrice, query]);
 
   const fetchTopDeals = useCallback(async () => {
     setLoadingTop(true);
@@ -228,11 +230,12 @@ export function DealsDashboard() {
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Category
+              Min price
               <input
-                value={category}
-                onChange={(event) => setCategory(event.target.value)}
-                placeholder="Pizza, Burger..."
+                value={minPrice}
+                onChange={(event) => setMinPrice(event.target.value)}
+                placeholder="100"
+                inputMode="numeric"
                 className="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20"
               />
             </label>
@@ -247,10 +250,10 @@ export function DealsDashboard() {
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Search
+              Query
               <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
                 placeholder="Cheese burst..."
                 className="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20"
               />
