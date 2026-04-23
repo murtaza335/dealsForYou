@@ -3,6 +3,9 @@ import { rabbitMQSubscriber } from "./services/rabbitmq.subscriber.js";
 import "dotenv/config";
 import { connectDB } from "./config/db.js";
 import { dealsRouter } from "./routes/deals.routes.js";
+import mongoose from "mongoose";
+import { BrandModel } from "./models/brands.model.js";
+import { DealModel } from "./models/deal.model.js";
 
 const app = express();
 const PORT = process.env.SERVICE_PORT_DEALS_SERVICE || 5000;
