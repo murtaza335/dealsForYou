@@ -5,7 +5,7 @@ export interface Deal {
   description: string;
   price: number;
   salePrice?: number;
-  image: string;
+  imgUrl: string;
   category: string;
   brandSlug: string;
   isActive?: boolean;

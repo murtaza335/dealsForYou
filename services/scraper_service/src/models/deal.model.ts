@@ -7,7 +7,7 @@ export interface DealDocument extends Document {
   description: string;
   price: number;
   salePrice: number;
-  image: string;
+  imgUrl: string;
   category: string;
   isActive: boolean;
   brandId: Types.ObjectId;
@@ -23,7 +23,7 @@ const dealSchema = new Schema<DealDocument>(
     description: { type: String, default: "" },
     price: { type: Number, required: true },
     salePrice: { type: Number, default: 0 },
-    image: { type: String, required: true },
+    imgUrl: { type: String, required: true },
     category: { type: String, required: true },
     isActive: { type: Boolean, default: true },
     brandId: { type: Schema.Types.ObjectId, ref: "Brand", required: true },

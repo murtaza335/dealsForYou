@@ -97,7 +97,7 @@ export class KfcScraper extends BaseScraper {
               item.item_size?.[0]?.mrp ||
               0,
             salePrice: 0,
-            image:
+            imgUrl:
               `${imageBaseUrl}/images/${item.image_url}` ||
               item.item_size?.[0]?.image_url ||
               "",
