@@ -34,7 +34,10 @@ export class DominosScraper extends BaseScraper {
           ? source.headers
           : {};
 
-      const imageBaseUrl = source.baseApiUrl || "https://www.dominos.com.pk/images/";
+          // concat /images to the imageBaseUrl
+      const imageBaseUrl = source.baseApiUrl + "/images" || "https://www.dominos.com.pk/images/";
+
+      console.log(imageBaseUrl);
 
       const response = await axios.post(
         source.scrapApiURl,
@@ -59,7 +62,7 @@ export class DominosScraper extends BaseScraper {
             description: deal.combo_description,
             price: deal.combo_mrp_price,
             salePrice: deal.combo_sale_price,
-            image: normalizeImageUrl(deal.image_url, imageBaseUrl),
+            imgUrl: normalizeImageUrl(deal.image_url, imageBaseUrl),
             category:
               item.sub_group_name ||
               item.subgroup_name ||

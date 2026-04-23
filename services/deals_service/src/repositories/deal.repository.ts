@@ -198,6 +198,7 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
             endTime: endTime ?? undefined,
             isExpired,
             isActive,
+            imgUrl: raw.imgUrl ?? "",
             scrapedAt: now,
           },
         },

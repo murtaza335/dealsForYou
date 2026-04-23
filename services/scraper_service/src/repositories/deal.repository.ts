@@ -69,7 +69,7 @@ export class DealRepository {
               description: deal.description,
               price: deal.price,
               salePrice: deal.salePrice,
-              image: deal.image,
+              imgUrl: deal.imgUrl ?? "",
               category: deal.category,
               isActive: true
             }
