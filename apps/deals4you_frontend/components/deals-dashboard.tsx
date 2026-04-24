@@ -1,6 +1,7 @@
 "use client";
 
-import { UserButton, useAuth, useUser } from "@clerk/nextjs";
+import Image from "next/image";
+import { UserButton, SignUpButton, useAuth, useUser } from "@clerk/nextjs";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { DealCard } from "@/components/deal-card";
 import {
@@ -10,6 +11,67 @@ import {
   type ApiResponse,
   type Deal,
 } from "@/lib/deals";
+
+const scatteredIcons = [
+  { src: "/assets/pizza.png", alt: "pizza", top: "9%", left: "8%", size: 80, rotate: -16 },
+  { src: "/assets/burger.png", alt: "burger", top: "14%", left: "68%", size: 88, rotate: 12 },
+  {
+    src: "/assets/french-fries.png",
+    alt: "fries",
+    top: "9%",
+    left: "94%",
+    size: 74,
+    rotate: -7,
+  },
+  { src: "/assets/pizza.png", alt: "pizza", top: "36%", left: "46%", size: 84, rotate: 9 },
+  { src: "/assets/burger.png", alt: "burger", top: "9%", left: "35%", size: 92, rotate: -12 },
+  {
+    src: "/assets/french-fries.png",
+    alt: "fries",
+    top: "62%",
+    left: "25%",
+    size: 78,
+    rotate: 13,
+  },
+  { src: "/assets/pizza.png", alt: "pizza", top: "55%", left: "67%", size: 86, rotate: -9 },
+  { src: "/assets/burger.png", alt: "burger", top: "65%", left: "90%", size: 90, rotate: 10 },
+  {
+    src: "/assets/french-fries.png",
+    alt: "fries",
+    top: "38%",
+    left: "10%",
+    size: 72,
+    rotate: 6,
+  },
+];
+
+const PatternBlock = ({ idSuffix }: { idSuffix: string }) => (
+  <div className="relative h-screen w-full shrink-0">
+    {scatteredIcons.map((icon, index) => (
+      <div
+        key={`${icon.alt}-${index}-${idSuffix}`}
+        className="pointer-events-none absolute"
+        style={{
+          top: icon.top,
+          left: icon.left,
+          transform: `translate(-50%, -50%) rotate(${icon.rotate}deg)`,
+          opacity: 0.45,
+        }}
+      >
+        <Image
+          src={icon.src}
+          alt={icon.alt}
+          width={icon.size}
+          height={icon.size}
+          style={{
+            filter:
+              "brightness(0) invert(1) grayscale(1) contrast(1.5)",
+          }}
+        />
+      </div>
+    ))}
+  </div>
+);
 
 function SectionEmptyState({
   loading,
@@ -183,145 +245,126 @@ export function DealsDashboard() {
   };
 
   return (
-    <main className="relative min-h-screen px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-7xl">
-        <header className="rounded-[2rem] border border-white/60 bg-white/75 p-6 shadow-glow backdrop-blur-xl sm:p-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="inline-flex rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-brand-800">
-                Personalized Savings Hub
-              </p>
-              <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-                Deals4You
-              </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-                Find food deals fast, then let recommendations sharpen what you see next.
-              </p>
-            </div>
-            <div className="flex items-center gap-4 rounded-3xl border border-slate-200 bg-slate-950 px-4 py-3 text-white shadow-[0_16px_40px_rgba(15,23,42,0.18)]">
+    <main
+      className="relative w-full overflow-x-hidden overflow-y-auto"
+      style={{
+        background: "linear-gradient(180deg, #151515 0%, #232323 100%)",
+        height: "100vh",
+        perspective: "10px",
+      }}
+    >
+      <header className="absolute inset-x-0 top-0 z-20 h-25">
+        <nav className="mx-auto flex h-full w-full max-w-3xl items-center justify-center gap-8 px-4">
+          <button className="relative px-2 py-2 text-sm font-bold text-white transition hover:text-red-400">
+            Home
+          </button>
+          <button className="relative px-2 py-2 text-sm font-bold text-white transition after:absolute after:-bottom-1 after:left-0 after:h-[3px] after:w-full after:bg-red-600 hover:text-red-400">
+            Deals
+          </button>
+          <button className="relative px-2 py-2 text-sm font-bold text-white transition hover:text-red-400">
+            About
+          </button>
+
+          <button aria-label="Search" className="ml-2 text-white transition hover:text-red-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          </button>
+        </nav>
+
+        <div className="absolute left-5 top-1/2 flex -translate-y-1/2 items-center sm:left-7">
+          <Image
+            src="/assets/logoo.png"
+            alt="DealsForYou logo"
+            width={220}
+            height={220}
+            priority
+            className="h-[220px] w-[220px] object-contain"
+            style={{
+              filter:
+                "brightness(0) saturate(100%) invert(13%) sepia(94%) saturate(6361%) hue-rotate(357deg) brightness(112%) contrast(117%)",
+            }}
+          />
+        </div>
+
+        <div className="absolute right-5 top-1/2 flex -translate-y-1/2 items-center sm:right-7">
+          <UserButton />
+        </div>
+      </header>
+
+      <div
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{
+          transform: "translateZ(-25px) scale(3.5)",
+          transformOrigin: "top",
+        }}
+      >
+        <div className="flex flex-col w-full">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <PatternBlock key={i} idSuffix={i.toString()} />
+          ))}
+        </div>
+      </div>
+
+      <div className="relative z-10 px-4 pb-6 pt-25 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl">
+
+          {errorMessage ? (
+            <p className="mt-6 rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {errorMessage}
+            </p>
+          ) : null}
+
+          <section className="mt-6">
+            <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-brand-200">Welcome</p>
-                <p className="text-sm font-semibold">{welcomeName}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-yellow-500">Recommended</p>
+                <h2 className="mt-2 font-display text-2xl font-bold text-yellow-500">Deals matched to your activity</h2>
               </div>
-              <UserButton />
+              {!isSignedIn ? (
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+                  Sign in required
+                </span>
+              ) : null}
             </div>
-          </div>
-        </header>
 
-        <section className="mt-6 rounded-[2rem] border border-white/60 bg-white/80 p-6 shadow-glow backdrop-blur-xl sm:p-8">
-          <div className="flex items-center justify-between gap-4">
+            <SectionEmptyState loading={loadingRecommended} items={recommendedDeals} emptyText="No recommendations yet." />
+            <div className="mt-8 grid gap-16 sm:grid-cols-2 xl:grid-cols-3">
+              {recommendedDeals.map((deal) => (
+                <DealCard key={deal.externalId} deal={deal} onClick={() => void handleDealClick(deal.id)} />
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">Filters</p>
-              <h2 className="mt-2 font-display text-2xl font-bold text-slate-950">Refine what you want</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-yellow-500">Top deals</p>
+              <h2 className="mt-2 font-display text-2xl font-bold text-yellow-500">Popular picks right now</h2>
             </div>
-            <span className="rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-800">
-              Live query
-            </span>
-          </div>
 
-          <form onSubmit={onFilterSubmit} className="mt-6 grid gap-4 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto]">
-            <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Brand
-              <input
-                value={brand}
-                onChange={(event) => setBrand(event.target.value)}
-                placeholder="KFC, Dominos..."
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20"
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Min price
-              <input
-                value={minPrice}
-                onChange={(event) => setMinPrice(event.target.value)}
-                placeholder="100"
-                inputMode="numeric"
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20"
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Max price
-              <input
-                value={maxPrice}
-                onChange={(event) => setMaxPrice(event.target.value)}
-                placeholder="500"
-                inputMode="numeric"
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20"
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Query
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Cheese burst..."
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20"
-              />
-            </label>
-            <button
-              type="submit"
-              className="rounded-2xl bg-brand-500 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-wait disabled:opacity-70"
-              disabled={loadingFiltered}
-            >
-              {loadingFiltered ? "Filtering..." : "Apply filters"}
-            </button>
-          </form>
-        </section>
+            <SectionEmptyState loading={loadingTop} items={topDeals} emptyText="No top deals available." />
+            <div className="mt-8 grid gap-16 sm:grid-cols-2 xl:grid-cols-3">
+              {topDeals.map((deal) => (
+                <DealCard key={deal.externalId} deal={deal} onClick={() => void handleDealClick(deal.id)} />
+              ))}
+            </div>
+          </section>
 
-        {errorMessage ? (
-          <p className="mt-6 rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {errorMessage}
-          </p>
-        ) : null}
-
-        <section className="mt-6 rounded-[2rem] border border-white/60 bg-white/80 p-6 shadow-glow backdrop-blur-xl sm:p-8">
-          <div className="flex items-center justify-between gap-4">
+          <section className="mt-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">Recommended</p>
-              <h2 className="mt-2 font-display text-2xl font-bold text-slate-950">Deals matched to your activity</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-yellow-500">Filtered results</p>
+              <h2 className="mt-2 font-display text-2xl font-bold text-yellow-500">What matches your query</h2>
             </div>
-            {!isSignedIn ? (
-              <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
-                Sign in required
-              </span>
-            ) : null}
-          </div>
 
-          <SectionEmptyState loading={loadingRecommended} items={recommendedDeals} emptyText="No recommendations yet." />
-          <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {recommendedDeals.map((deal) => (
-              <DealCard key={deal.externalId} deal={deal} onClick={() => void handleDealClick(deal.id)} />
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-6 rounded-[2rem] border border-white/60 bg-white/80 p-6 shadow-glow backdrop-blur-xl sm:p-8">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">Top deals</p>
-            <h2 className="mt-2 font-display text-2xl font-bold text-slate-950">Popular picks right now</h2>
-          </div>
-
-          <SectionEmptyState loading={loadingTop} items={topDeals} emptyText="No top deals available." />
-          <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {topDeals.map((deal) => (
-              <DealCard key={deal.externalId} deal={deal} onClick={() => void handleDealClick(deal.id)} />
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-6 rounded-[2rem] border border-white/60 bg-white/80 p-6 shadow-glow backdrop-blur-xl sm:p-8">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">Filtered results</p>
-            <h2 className="mt-2 font-display text-2xl font-bold text-slate-950">What matches your query</h2>
-          </div>
-
-          <SectionEmptyState loading={loadingFiltered} items={filteredDeals} emptyText="No deals match this filter." />
-          <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {filteredDeals.map((deal) => (
-              <DealCard key={deal.externalId} deal={deal} onClick={() => void handleDealClick(deal.id)} />
-            ))}
-          </div>
-        </section>
+            <SectionEmptyState loading={loadingFiltered} items={filteredDeals} emptyText="No deals match this filter." />
+            <div className="mt-8 grid gap-16 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredDeals.map((deal) => (
+                <DealCard key={deal.externalId} deal={deal} onClick={() => void handleDealClick(deal.id)} />
+              ))}
+            </div>
+          </section>
+        </div>
       </div>
     </main>
   );
