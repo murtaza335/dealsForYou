@@ -9,16 +9,18 @@ export const getFilteredDeals: RequestHandler = async (req, res, next) => {
   try {
     const query: FilteredDealsQuery = {
       brand: typeof req.query.brand === "string" ? req.query.brand : undefined,
-      category:
-        typeof req.query.category === "string" ? req.query.category : undefined,
+      minPrice:
+        typeof req.query.minPrice === "string" ? req.query.minPrice : undefined,
       maxPrice:
-        typeof req.query.maxPrice === "string"
-          ? Number(req.query.maxPrice)
-          : undefined,
-      search: typeof req.query.search === "string" ? req.query.search : undefined,
+        typeof req.query.maxPrice === "string" ? req.query.maxPrice : undefined,
+      query: typeof req.query.query === "string" ? req.query.query : undefined,
     };
 
+    console.log("[Gateway] GET /api/deals/filtered query:", query);
+
     const deals = await dealsService.getFilteredDeals(query);
+
+    console.log("[Gateway] Filtered deals fetched:", deals.length);
 
     res.status(200).json({
       success: true,
@@ -26,6 +28,7 @@ export const getFilteredDeals: RequestHandler = async (req, res, next) => {
       message: "Filtered deals fetched successfully",
     });
   } catch (error) {
+    console.error("[Gateway] getFilteredDeals failed:", error);
     next(error);
   }
 };
