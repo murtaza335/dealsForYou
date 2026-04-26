@@ -76,6 +76,20 @@ export function DealsDashboard() {
     }
   }, [brand, minPrice, maxPrice, query]);
 
+  const fetchBrands = useCallback(async () => {
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/deals/brands`);
+      if (!response.ok) {
+        throw new Error("Could not fetch brands.");
+      }
+
+      const payload: ApiResponse = await response.json();
+      console.log("Fetched brands:", payload.data);
+    } catch (error) {
+      console.error("Error fetching brands:", error);
+    }
+  }, []);
+
   useEffect(() => {
     if (!isSignedIn) return;
 
@@ -86,10 +100,21 @@ export function DealsDashboard() {
     return () => clearTimeout(timer);
   }, [isSignedIn, fetchFilteredDeals]);
 
+  useEffect(() => {
+    void fetchBrands();
+  }, [fetchBrands]);
+
   const onFilterSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     void fetchFilteredDeals();
   };
+
+
+
+ 
+
+
+
 
   return (
     <div className="relative z-10 px-6 pb-6 pt-25 sm:px-8 md:px-12 lg:px-16 xl:px-20">
