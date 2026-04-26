@@ -32,23 +32,39 @@ export function DealCard({ deal }: DealCardProps) {
 
 
   return (
-    <article className="group overflow-hidden rounded-3xl border border-slate-200/80 bg-white/90 shadow-[0_18px_60px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgba(15,23,42,0.14)]">
+    <article className="group relative overflow-hidden rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-slate-200/50">
       <button type="button" onClick={() => void handleDealClick(deal.id)} className="block w-full text-left">
-        <img
-          src={deal.imgUrl}
-          alt={deal.title}
-          className="h-44 w-full object-cover bg-slate-100 transition duration-300 group-hover:scale-[1.02]"
-          loading="lazy"
-        />
-        <div className="space-y-3 p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">
+        <div className="relative overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+          <img
+            src={deal.imgUrl}
+            alt={deal.title}
+            className="h-48 w-full object-contain transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <div className="absolute top-3 left-3 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
             {deal.brandSlug}
-          </p>
-          <div className="space-y-1">
-            <h3 className="text-base font-semibold text-slate-950">{deal.title}</h3>
-            <p className="line-clamp-3 text-sm leading-6 text-slate-600">{deal.description}</p>
           </div>
-          <p className="text-lg font-bold text-slate-950">{formatPrice(deal.price)}</p>
+        </div>
+        <div className="p-3">
+          <div className="space-y-2">
+            <h3 className="text-lg font-bold text-slate-900 leading-tight line-clamp-2 group-hover:text-red-600 transition-colors duration-200">
+              {deal.title}
+            </h3>
+            <p className="text-sm leading-relaxed text-slate-600 line-clamp-2">
+              {deal.description}
+            </p>
+          </div>
+          <div className="mt-3 flex items-center justify-between">
+            <p className="text-2xl font-bold text-slate-900">
+              {formatPrice(deal.price)}
+            </p>
+            <div className="rounded-full bg-red-500 p-2 text-white transition-transform duration-200 group-hover:scale-110">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
         </div>
       </button>
     </article>
