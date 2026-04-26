@@ -38,7 +38,7 @@ export async function publishRecommendationEvent(
   payload: RecommendationEventPayload
 ): Promise<void> {
   const ch = await getChannel();
-
+  console.log(`Publishing recommendation event: ${JSON.stringify(payload)}`);
   ch.sendToQueue(
     QUEUE_NAME,
     Buffer.from(JSON.stringify(payload)),
@@ -47,6 +47,7 @@ export async function publishRecommendationEvent(
       contentType: "application/json",
     }
   );
+  console.log("Recommendation event published successfully");
 }
 
 export async function closeRecommendationPublisher(): Promise<void> {

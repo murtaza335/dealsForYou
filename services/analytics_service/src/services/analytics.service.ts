@@ -39,12 +39,14 @@ export class AnalyticsService {
 
     const event = await EventModel.create(data);
 
-    if (data.dealId) {
-      await this.updateDealMetrics(data);
-    }
+    // remove it because it will call on each event which is not good
+    // if (data.dealId) {
+    //   await this.updateDealMetrics(data);
+    // }
     
     const action = toRecommendationAction(data.eventType);
     if (action) {
+      console.log(`Publishing recommendation event for action: ${action}, userId: ${data.userId}, dealId: ${data.dealId}`);
       try {
         await publishRecommendationEvent({
           action,
