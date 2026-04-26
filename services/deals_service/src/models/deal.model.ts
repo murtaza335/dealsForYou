@@ -1,31 +1,6 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 
-// CREATE TABLE deals (
-//     deal_id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-//     brand_id          UUID NOT NULL REFERENCES brands(brand_id) ON DELETE CASCADE,
-//     external_id       VARCHAR(100),                     -- unique per brand (from scraper)
-//     title             VARCHAR(200) NOT NULL,
-//     description       TEXT,
-//     price             NUMERIC(10,2) NOT NULL,           -- discounted price
-//     original_price    NUMERIC(10,2),
-//     currency          VARCHAR(3) DEFAULT 'PKR',
-//     discount_percent  NUMERIC(5,2),
-//     min_persons       SMALLINT,
-//     max_persons       SMALLINT,
-//     cuisine_tags      TEXT[],                          -- e.g. {pizza, burger, chinese}
-//     meal_type         TEXT[],                          -- {breakfast, lunch, dinner, snack}
-//     conditions        TEXT,                            -- "valid for 2 persons", "delivery only"
-//     start_time        TIMESTAMPTZ,
-//     end_time          TIMESTAMPTZ NOT NULL,
-//     is_hot            BOOLEAN DEFAULT false,            -- computed by background job
-//     views_count       INT DEFAULT 0,
-//     scraped_at        TIMESTAMPTZ,
-//     created_at        TIMESTAMPTZ DEFAULT NOW(),
-//     updated_at        TIMESTAMPTZ DEFAULT NOW(),
-//     UNIQUE(brand_id, external_id)
-// );
-
 //our schema for the deal data that we will be storing in our database
 export interface DealDocument extends Document {
   dealId: string; // UUID string
@@ -51,6 +26,9 @@ export interface DealDocument extends Document {
   imgUrl?: string;
   viewsCount: number;
   scrapedAt?: Date;
+  metadata?: Record<string, unknown>;
+  metadataEnrichedAt?: Date;
+  metadataSource?: string;
 }
 
 const dealSchema = new Schema<DealDocument>(
@@ -89,6 +67,9 @@ const dealSchema = new Schema<DealDocument>(
     viewsCount: { type: Number, default: 0 },
     scrapedAt: { type: Date },
     imgUrl: { type: String, default: "" },
+    metadata: { type: Schema.Types.Mixed },
+    metadataEnrichedAt: { type: Date },
+    metadataSource: { type: String },
   },
   { timestamps: true }
 );
