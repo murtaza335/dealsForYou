@@ -44,7 +44,7 @@ export class ScraperControlRepository {
       { slug },
       data,
       {
-        new: true,
+        returnDocument: 'after',
         runValidators: true
       }
     );
@@ -55,7 +55,7 @@ export class ScraperControlRepository {
     return ScraperSourceModel.findOneAndUpdate(
       { slug },
       { isActive: false },
-      { new: true }
+      { returnDocument: 'after' }
     );
   }
 
@@ -64,7 +64,7 @@ export class ScraperControlRepository {
     return ScraperSourceModel.findOneAndUpdate(
       { slug },
       { isActive: true },
-      { new: true }
+      { returnDocument: 'after' }
     );
   }
 
