@@ -11,8 +11,7 @@ import {
   type ApiResponse,
   type Deal,
 } from "@/lib/deals";
-
-
+import { motion, AnimatePresence } from "framer-motion";
 
 function SectionEmptyState({
   loading,
@@ -45,10 +44,10 @@ export function DealsDashboard() {
   const [query, setQuery] = useState("");
 
   const [filteredDeals, setFilteredDeals] = useState<Deal[]>([]);
-
   const [loadingFiltered, setLoadingFiltered] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const fetchFilteredDeals = useCallback(async () => {
     setLoadingFiltered(true);
@@ -69,9 +68,7 @@ export function DealsDashboard() {
 
       const payload: ApiResponse = await response.json();
       setFilteredDeals(payload.data ?? []);
-      console.log(payload, 2, null)
     } catch (error) {
-      console.log(error)
       setErrorMessage(error instanceof Error ? error.message : "Unexpected error.");
       setFilteredDeals([]);
     } finally {
@@ -79,12 +76,8 @@ export function DealsDashboard() {
     }
   }, [brand, minPrice, maxPrice, query]);
 
-
-
   useEffect(() => {
-    if (!isSignedIn) {
-      return;
-    }
+    if (!isSignedIn) return;
 
     const timer = setTimeout(() => {
       void fetchFilteredDeals();
@@ -98,10 +91,8 @@ export function DealsDashboard() {
     void fetchFilteredDeals();
   };
 
-
-
   return (
-    <div className="relative z-10 px-4 pb-6 pt-25 sm:px-6 lg:px-8">
+    <div className="relative z-10 px-6 pb-6 pt-25 sm:px-8 md:px-12 lg:px-16 xl:px-20">
       <div className="mx-auto w-full max-w-7xl">
 
         {errorMessage ? (
@@ -110,15 +101,94 @@ export function DealsDashboard() {
           </p>
         ) : null}
 
+        <section className="mt-8">
+          <div className="relative">
 
-        <section className="mt-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-yellow-500">Filtered results</p>
-            <h2 className="mt-2 font-display text-2xl font-bold text-yellow-500">What matches your query</h2>
+            <motion.div layout className="flex items-center justify-between gap-6 mb-4">
+
+              {/* LEFT SIDE */}
+              <AnimatePresence>
+              {!isExpanded && (
+                <motion.div
+                  initial={{ opacity: 1 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15, delay: 0.1 }} // 👈 KEY FIX
+                  className="flex items-center gap-3 flex-1 min-w-0"
+                >
+                  <div className="h-1 w-12 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full"></div>
+                  <p className="text-sm font-bold uppercase tracking-[0.15em] text-yellow-400 bg-yellow-400/10 px-3 py-1 rounded-full whitespace-nowrap">
+                    All deals
+                  </p>
+                  <div className="h-1 flex-1 bg-gradient-to-r from-yellow-600 via-yellow-600/30 to-transparent rounded-full"></div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+              {/* RIGHT SIDE */}
+              <motion.div
+                layout
+                className={`flex items-center gap-3 px-6 py-3 rounded-full border text-white text-base font-semibold transition-all duration-300
+                  ${isExpanded
+                    ? "flex-1 bg-slate-900 border-yellow-400/50"
+                    : "bg-gradient-to-r from-slate-800 to-slate-900 border-slate-700 hover:border-yellow-400/50 hover:shadow-lg hover:shadow-yellow-400/20 flex-shrink-0 cursor-pointer"
+                  }`}
+                onClick={() => {
+                  if (!isExpanded) setIsExpanded(true);
+                }}
+              >
+                <AnimatePresence mode="wait" initial={false}>
+
+                  {!isExpanded ? (
+                    <motion.div
+                      key="mood"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center gap-3"
+                    >
+                      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>What&apos;s your mood?</span>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="search"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center w-full gap-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        autoFocus
+                        placeholder="Search deals by mood..."
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        className="w-full bg-transparent outline-none text-white"
+                      />
+
+                      {/* CLOSE BUTTON */}
+                      <button
+                        onClick={() => setIsExpanded(false)}
+                        className="p-1 rounded-full hover:bg-white/10 transition"
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </motion.div>
+                  )}
+
+                </AnimatePresence>
+              </motion.div>
+
+            </motion.div>
           </div>
 
           <SectionEmptyState loading={loadingFiltered} items={filteredDeals} emptyText="No deals match this filter." />
-          <div className="mt-8 grid gap-16 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
             {filteredDeals.map((deal) => (
               <DealCard key={deal.externalId} deal={deal} />
             ))}

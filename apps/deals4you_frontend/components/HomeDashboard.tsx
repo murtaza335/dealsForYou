@@ -1,13 +1,10 @@
 "use client";
 
-import Image from "next/image";
-import { UserButton, SignUpButton, useAuth, useUser } from "@clerk/nextjs";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useAuth, useUser } from "@clerk/nextjs";
+import { useCallback, useEffect, useState } from "react";
 import { DealCard } from "@/components/deal-card";
 import {
   apiBaseUrl,
-  buildQuery,
-  recommendationBaseUrl,
   type ApiResponse,
   type Deal,
 } from "@/lib/deals";
