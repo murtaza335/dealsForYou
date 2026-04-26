@@ -1,14 +1,39 @@
 import { formatPrice, type Deal } from "@/lib/deals";
+import { recommendationBaseUrl } from "@/lib/deals";
 
 type DealCardProps = {
   deal: Deal;
-  onClick?: () => void;
 };
 
-export function DealCard({ deal, onClick }: DealCardProps) {
+
+
+export function DealCard({ deal }: DealCardProps) {
+
+  
+  const handleDealClick = async (dealId: number) => {
+    if (!recommendationBaseUrl) {
+      return;
+    }
+
+    try {
+      await fetch(`${recommendationBaseUrl}/api/track/track_click`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          dealId,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to track click:", error);
+    }
+  };
+
+
   return (
     <article className="group overflow-hidden rounded-3xl border border-slate-200/80 bg-white/90 shadow-[0_18px_60px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgba(15,23,42,0.14)]">
-      <button type="button" onClick={onClick} className="block w-full text-left">
+      <button type="button" onClick={() => void handleDealClick(deal.id)} className="block w-full text-left">
         <img
           src={deal.imgUrl}
           alt={deal.title}
