@@ -42,7 +42,7 @@ export class AnalyticsService {
     if (data.dealId) {
       await this.updateDealMetrics(data);
     }
-
+    
     const action = toRecommendationAction(data.eventType);
     if (action) {
       try {
@@ -102,7 +102,7 @@ export class AnalyticsService {
     const metrics = await DealMetricsModel.findOneAndUpdate(
       { dealId: data.dealId },
       update,
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     // recompute CTR
