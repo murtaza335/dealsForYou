@@ -12,6 +12,7 @@ export interface IEvent extends Document {
   dwellTime?: number;
   scoreDelta?: number;
   url?: string;
+  processed?: boolean;
   timestamp: Date;
 }
 
@@ -32,6 +33,7 @@ const EventSchema = new Schema<IEvent>({
   scoreDelta: { type: Number },
 
   url: { type: String },
+  processed: { type: Boolean, default: false, index: true },
 
   timestamp: { type: Date, default: Date.now },
 });
