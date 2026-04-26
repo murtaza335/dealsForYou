@@ -50,6 +50,26 @@ class DealsService {
     
     return [];
   }
+
+  async getBrands() {
+    const dealsServiceBaseUrl =
+      process.env.deals_url ?? process.env.DEALS_URL ?? "http://localhost:5002";
+
+    const url = `${dealsServiceBaseUrl.replace(/\/$/, "")}/api/deals/brands`;
+
+    console.log("[Gateway] Forwarding brands request to:", url);
+
+    const response = await fetch(url);
+
+    console.log("[Gateway] Deals service response status:", response.status);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch brands from deals service (${response.status}).`);
+    }
+
+    const payload = (await response.json()) as { data?: unknown[] };
+    return payload.data ?? [];
+  }
 }
 
 export const dealsService = new DealsService();
