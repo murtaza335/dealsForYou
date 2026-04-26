@@ -1,5 +1,10 @@
-import { redirect } from "next/navigation";
+import { HomeDashboard } from "@/components/HomeDashboard";
+import { SharedLayout } from "@/components/shared-layout";
 
 export default function HomePage() {
-  redirect("/sign-in");
+  return (
+    <SharedLayout activeTab="home">
+      <HomeDashboard />
+    </SharedLayout>
+  );
 }
