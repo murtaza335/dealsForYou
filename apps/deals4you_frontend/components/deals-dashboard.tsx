@@ -104,34 +104,38 @@ export function DealsDashboard() {
         <section className="mt-8">
           <div className="relative">
 
-            <motion.div layout className="flex items-center justify-between gap-6 mb-4">
-
-              {/* LEFT SIDE */}
-              <AnimatePresence>
+            {/* container for both */}
+            <motion.div
+              layout
+              className="flex items-center mb-4"
+              transition={{ duration: 0.4, ease: "easeOut" }}
+            >
+              {/* all deal heading */}
               {!isExpanded && (
-                <motion.div
-                  initial={{ opacity: 1 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15, delay: 0.1 }} // 👈 KEY FIX
-                  className="flex items-center gap-3 flex-1 min-w-0"
-                >
+                <div className="flex items-center gap-3 flex-1">
                   <div className="h-1 w-12 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full"></div>
                   <p className="text-sm font-bold uppercase tracking-[0.15em] text-yellow-400 bg-yellow-400/10 px-3 py-1 rounded-full whitespace-nowrap">
                     All deals
                   </p>
                   <div className="h-1 flex-1 bg-gradient-to-r from-yellow-600 via-yellow-600/30 to-transparent rounded-full"></div>
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
 
-              {/* RIGHT SIDE */}
+              {/* the search bar*/}
               <motion.div
                 layout
-                className={`flex items-center gap-3 px-6 py-3 rounded-full border text-white text-base font-semibold transition-all duration-300
+                transition={{
+                  duration: 0.6,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                  layout: {
+                    duration: 0.6,
+                    ease: [0.25, 0.46, 0.45, 0.94]
+                  }
+                }}
+                className={`flex items-center gap-3 px-6 py-3 rounded-full border text-white text-base font-semibold cursor-pointer h-12 ml-4
                   ${isExpanded
                     ? "flex-1 bg-slate-900 border-yellow-400/50"
-                    : "bg-gradient-to-r from-slate-800 to-slate-900 border-slate-700 hover:border-yellow-400/50 hover:shadow-lg hover:shadow-yellow-400/20 flex-shrink-0 cursor-pointer"
+                    : "w-auto bg-gradient-to-r from-slate-800 to-slate-900 border-slate-700 hover:border-yellow-400/50 hover:shadow-lg hover:shadow-yellow-400/20"
                   }`}
                 onClick={() => {
                   if (!isExpanded) setIsExpanded(true);
@@ -145,9 +149,10 @@ export function DealsDashboard() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="flex items-center gap-3"
+                      transition={{ duration: 0.3 }}
+                      className="flex items-center gap-3 whitespace-nowrap"
                     >
-                      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-6 w-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span>What&apos;s your mood?</span>
@@ -155,36 +160,42 @@ export function DealsDashboard() {
                   ) : (
                     <motion.div
                       key="search"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex items-center w-full gap-2"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      className="flex items-center w-full gap-3"
                       onClick={(e) => e.stopPropagation()}
                     >
+                      <svg className="h-6 w-6 flex-shrink-0 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
                       <input
                         autoFocus
-                        placeholder="Search deals by mood..."
+                        placeholder="Search deals by mood, brand, food..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        className="w-full bg-transparent outline-none text-white"
+                        className="flex-1 bg-transparent outline-none text-white placeholder-gray-400 h-full resize-none"
                       />
 
-                      {/* CLOSE BUTTON */}
-                      <button
+                      {/* closing */}
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => setIsExpanded(false)}
-                        className="p-1 rounded-full hover:bg-white/10 transition"
+                        className="p-1 rounded-full hover:bg-white/10 transition-colors duration-200 flex-shrink-0"
                       >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                      </button>
+                      </motion.button>
                     </motion.div>
                   )}
 
                 </AnimatePresence>
               </motion.div>
-
             </motion.div>
+
           </div>
 
           <SectionEmptyState loading={loadingFiltered} items={filteredDeals} emptyText="No deals match this filter." />

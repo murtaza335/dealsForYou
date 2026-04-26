@@ -11,6 +11,23 @@ const parseNumberQuery = (value: unknown): number | undefined => {
   return Number.isFinite(parsed) ? parsed : Number.NaN;
 };
 
+export const getBrands = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const brands = [
+      { name: "KFC", slug: "kfc" },
+      { name: "Dominos", slug: "dominos" }
+    ];
+
+    return res.status(200).json({
+      success: true,
+      message: "Brands fetched successfully.",
+      data: brands,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getDeals = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const minPrice = parseNumberQuery(req.query.minPrice);
