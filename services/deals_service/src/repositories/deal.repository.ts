@@ -12,6 +12,46 @@ export interface DealFilters {
   maxPrice?: number;
   query?: string;
   brand?: string;
+  brands?: string[];
+  cuisineTags?: string[];
+  mealTypes?: string[];
+  minDiscount?: number;
+  maxDiscount?: number;
+  minPersons?: number;
+  maxPersons?: number;
+  isHot?: boolean;
+  isActive?: boolean;
+  isExpired?: boolean;
+  startAfter?: Date;
+  endBefore?: Date;
+  page?: number;
+  limit?: number;
+  sortBy?: "createdAt" | "price" | "discountPercent" | "viewsCount" | "endTime";
+  sortOrder?: "asc" | "desc";
+}
+
+export interface DealsPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface DealsListResult {
+  items: DealDocument[];
+  pagination: DealsPagination;
+}
+
+export interface DealFilterOptions {
+  brands: Array<{ name: string; slug: string }>;
+  cuisineTags: string[];
+  mealTypes: string[];
+  currencies: string[];
+  priceRange: { min: number; max: number };
+  discountRange: { min: number; max: number };
+  personsRange: { min: number; max: number };
 }
 
 // const brandSchema = new Schema<BrandDocument>(
@@ -45,6 +85,25 @@ export class DealRepository {
 
   private escapeRegex(text: string): string {
     return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  private toSortedUniqueStrings(values: unknown[]): string[] {
+    const result = new Set<string>();
+
+    for (const value of values) {
+      if (typeof value !== "string") {
+        continue;
+      }
+
+      const normalized = value.trim();
+      if (normalized.length === 0) {
+        continue;
+      }
+
+      result.add(normalized);
+    }
+
+    return [...result].sort((a, b) => a.localeCompare(b));
   }
 
   private isRetryableSyncError(error: unknown): boolean {
@@ -348,26 +407,66 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
     return await DealModel.findOne({ dealId: dealId });
   }
 
-  async getDeals(filters: DealFilters): Promise<DealDocument[]> {
+  async getDeals(filters: DealFilters): Promise<DealsListResult> {
     const mongoFilter: Record<string, unknown> = {};
 
+    const requestedBrands = new Set<string>();
+
     if (typeof filters.brand === "string" && filters.brand.trim().length > 0) {
-      const normalizedBrand = filters.brand.trim();
-      const escapedBrand = this.escapeRegex(normalizedBrand);
-      const exactBrandRegex = new RegExp(`^${escapedBrand}$`, "i");
+      requestedBrands.add(filters.brand.trim());
+    }
+
+    if (Array.isArray(filters.brands)) {
+      for (const brand of filters.brands) {
+        if (typeof brand === "string" && brand.trim().length > 0) {
+          requestedBrands.add(brand.trim());
+        }
+      }
+    }
+
+    if (requestedBrands.size > 0) {
+      const requestedBrandsRegex = [...requestedBrands].map((brand) => {
+        const escapedBrand = this.escapeRegex(brand);
+        return new RegExp(`^${escapedBrand}$`, "i");
+      });
 
       const matchingBrands = await BrandModel.find({
         $or: [
-          { slug: exactBrandRegex },
-          { name: exactBrandRegex }
+          { slug: { $in: requestedBrandsRegex } },
+          { name: { $in: requestedBrandsRegex } }
         ]
       }).select("_id");
 
       if (matchingBrands.length === 0) {
-        return [];
+        const page = Math.max(1, filters.page ?? 1);
+        const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
+
+        return {
+          items: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasNextPage: false,
+            hasPrevPage: page > 1,
+          },
+        };
       }
 
       mongoFilter.brandId = { $in: matchingBrands.map((brand) => brand._id) };
+    }
+
+    if (typeof filters.isActive === "boolean") {
+      mongoFilter.isActive = filters.isActive;
+    }
+
+    if (typeof filters.isHot === "boolean") {
+      mongoFilter.isHot = filters.isHot;
+    }
+
+    if (typeof filters.isExpired === "boolean") {
+      mongoFilter.isExpired = filters.isExpired;
     }
 
     if (typeof filters.minPrice === "number" || typeof filters.maxPrice === "number") {
@@ -384,17 +483,204 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
       mongoFilter.price = priceRange;
     }
 
+    if (typeof filters.minDiscount === "number" || typeof filters.maxDiscount === "number") {
+      const discountRange: Record<string, number> = {};
+
+      if (typeof filters.minDiscount === "number") {
+        discountRange.$gte = filters.minDiscount;
+      }
+
+      if (typeof filters.maxDiscount === "number") {
+        discountRange.$lte = filters.maxDiscount;
+      }
+
+      mongoFilter.discountPercent = discountRange;
+    }
+
+    if (typeof filters.minPersons === "number" || typeof filters.maxPersons === "number") {
+      const personsRange: Record<string, number> = {};
+
+      if (typeof filters.minPersons === "number") {
+        personsRange.$gte = filters.minPersons;
+      }
+
+      if (typeof filters.maxPersons === "number") {
+        personsRange.$lte = filters.maxPersons;
+      }
+
+      mongoFilter.maxPersons = personsRange;
+    }
+
+    if (filters.startAfter instanceof Date) {
+      mongoFilter.startTime = {
+        ...(typeof mongoFilter.startTime === "object" && mongoFilter.startTime !== null
+          ? (mongoFilter.startTime as Record<string, Date>)
+          : {}),
+        $gte: filters.startAfter,
+      };
+    }
+
+    if (filters.endBefore instanceof Date) {
+      mongoFilter.endTime = {
+        ...(typeof mongoFilter.endTime === "object" && mongoFilter.endTime !== null
+          ? (mongoFilter.endTime as Record<string, Date>)
+          : {}),
+        $lte: filters.endBefore,
+      };
+    }
+
+    if (Array.isArray(filters.cuisineTags) && filters.cuisineTags.length > 0) {
+      const cuisineRegexes = filters.cuisineTags
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0)
+        .map((tag) => new RegExp(`^${this.escapeRegex(tag)}$`, "i"));
+
+      if (cuisineRegexes.length > 0) {
+        mongoFilter.cuisineTags = { $in: cuisineRegexes };
+      }
+    }
+
+    if (Array.isArray(filters.mealTypes) && filters.mealTypes.length > 0) {
+      const mealTypeRegexes = filters.mealTypes
+        .map((mealType) => mealType.trim())
+        .filter((mealType) => mealType.length > 0)
+        .map((mealType) => new RegExp(`^${this.escapeRegex(mealType)}$`, "i"));
+
+      if (mealTypeRegexes.length > 0) {
+        mongoFilter.mealType = { $in: mealTypeRegexes };
+      }
+    }
+
     if (typeof filters.query === "string" && filters.query.trim().length > 0) {
       const regex = new RegExp(this.escapeRegex(filters.query.trim()), "i");
 
       mongoFilter.$or = [
         { title: regex },
         { description: regex },
-        { cuisineTags: { $in: [regex] } }
+        { cuisineTags: { $in: [regex] } },
+        { mealType: { $in: [regex] } },
+        { brandSlug: regex }
       ];
     }
 
-    return await DealModel.find(mongoFilter).sort({ createdAt: -1 });
+    const page = Math.max(1, filters.page ?? 1);
+    const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
+    const skip = (page - 1) * limit;
+
+    const sortBy = filters.sortBy ?? "createdAt";
+    const sortOrder = filters.sortOrder === "asc" ? 1 : -1;
+
+    const [items, total] = await Promise.all([
+      DealModel.find(mongoFilter)
+        .sort({ [sortBy]: sortOrder })
+        .skip(skip)
+        .limit(limit),
+      DealModel.countDocuments(mongoFilter),
+    ]);
+
+    const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+
+    return {
+      items,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: totalPages > 0 && page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    };
+  }
+
+  async getFilterBrands(): Promise<Array<{ name: string; slug: string }>> {
+    const brands = await BrandModel.find({ isActive: true })
+      .select({ _id: 0, name: 1, slug: 1 })
+      .sort({ name: 1 })
+      .lean();
+
+    return brands.map((brand) => ({
+      name: brand.name,
+      slug: brand.slug,
+    }));
+  }
+
+  async getFilterCuisineTags(): Promise<string[]> {
+    const tags = await DealModel.distinct("cuisineTags", { isActive: true });
+    return this.toSortedUniqueStrings(tags);
+  }
+
+  async getFilterMealTypes(): Promise<string[]> {
+    const mealTypes = await DealModel.distinct("mealType", { isActive: true });
+    return this.toSortedUniqueStrings(mealTypes);
+  }
+
+
+  async getFilterPriceRange(): Promise<{ min: number; max: number }> {
+    const priceStats = await DealModel.aggregate<{ min?: number; max?: number }>([
+      { $match: { isActive: true } },
+      {
+        $group: {
+          _id: null,
+          min: { $min: "$price" },
+          max: { $max: "$price" },
+        },
+      },
+      { $project: { _id: 0, min: 1, max: 1 } },
+    ]);
+
+    const min = priceStats[0]?.min ?? 0;
+    const max = priceStats[0]?.max ?? 0;
+
+    return { min, max };
+  }
+
+  async getFilterOptions(): Promise<DealFilterOptions> {
+    const [brands, cuisineTags, mealTypes, currencies, priceRange, discountStats, personsStats] = await Promise.all([
+      this.getFilterBrands(),
+      this.getFilterCuisineTags(),
+      this.getFilterMealTypes(),
+      DealModel.distinct("currency", { isActive: true }),
+      this.getFilterPriceRange(),
+      DealModel.aggregate<{ min?: number; max?: number }>([
+        { $match: { isActive: true, discountPercent: { $ne: null } } },
+        {
+          $group: {
+            _id: null,
+            min: { $min: "$discountPercent" },
+            max: { $max: "$discountPercent" },
+          },
+        },
+        { $project: { _id: 0, min: 1, max: 1 } },
+      ]),
+      DealModel.aggregate<{ min?: number; max?: number }>([
+        { $match: { isActive: true, maxPersons: { $ne: null } } },
+        {
+          $group: {
+            _id: null,
+            min: { $min: "$minPersons" },
+            max: { $max: "$maxPersons" },
+          },
+        },
+        { $project: { _id: 0, min: 1, max: 1 } },
+      ]),
+    ]);
+
+    return {
+      brands,
+      cuisineTags,
+      mealTypes,
+      currencies: this.toSortedUniqueStrings(currencies),
+      priceRange,
+      discountRange: {
+        min: discountStats[0]?.min ?? 0,
+        max: discountStats[0]?.max ?? 0,
+      },
+      personsRange: {
+        min: personsStats[0]?.min ?? 0,
+        max: personsStats[0]?.max ?? 0,
+      },
+    };
   }
 
   // async incrementDealViews(dealId: string): Promise<void> {
