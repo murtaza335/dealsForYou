@@ -6,6 +6,7 @@ import { DealDocument } from "../models/deal.model.js";
 import { BrandDocument, BrandModel } from "../models/brands.model.js";
 import { v4 as uuidv4 } from "uuid";
 import { publishDealCreated } from "../services/rabbitmq.publisher.js";
+import { metadataEnrichmentService } from "../services/metadata.enrichment.service.js";
 
 export interface DealFilters {
   minPrice?: number;
@@ -267,7 +268,7 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
   });
 
   if (bulkOps.length > 0) {
-  let upsertedIds: string[] = [];
+    let upsertedIds: string[] = [];
 
   try {
     const bulkResult = await DealModel.bulkWrite(bulkOps, { ordered: false });
@@ -277,7 +278,7 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
 
     // Collect only newly inserted _ids
     if (bulkResult.upsertedIds && Object.keys(bulkResult.upsertedIds).length > 0) {
-      upsertedIds = Object.values(bulkResult.upsertedIds).map(id => id.toString());
+      upsertedIds = Object.values(bulkResult.upsertedIds).map((id) => id.toString());
       console.log(`[DealSync] Collected upsertedIds | count=${upsertedIds.length}`);
     }
   } catch (error) {
@@ -322,16 +323,18 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
     }
   }
 
+  let newlyInsertedDeals: DealDocument[] = [];
+
   // Only publish newly upserted deals
   if (upsertedIds.length > 0) {
     try {
-      const newDeals = await DealModel.find({ _id: { $in: upsertedIds } });
-      console.log(`[DealSync] Found ${newDeals.length} deals to publish`);
+      newlyInsertedDeals = await DealModel.find({ _id: { $in: upsertedIds } });
+      console.log(`[DealSync] Found ${newlyInsertedDeals.length} deals to publish`);
 
       let publishedCount = 0;
       let failedCount = 0;
 
-      for (const deal of newDeals) {
+      for (const deal of newlyInsertedDeals) {
         try {
           if (!deal.dealId) {
             console.warn(`[DealSync] Skipping publish: deal missing dealId | _id=${deal._id}`);
@@ -339,7 +342,6 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
             continue;
           }
 
-          console.log(deal)
           await publishDealCreated(deal.dealId, deal, brandId);
           publishedCount += 1;
         } catch (pubErr) {
@@ -350,7 +352,7 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
       }
 
       console.log(
-        `[DealSync] Publishing summary | total=${newDeals.length} | published=${publishedCount} | failed=${failedCount}`
+        `[DealSync] Publishing summary | total=${newlyInsertedDeals.length} | published=${publishedCount} | failed=${failedCount}`
       );
 
       if (failedCount > 0) {
@@ -365,6 +367,59 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
     }
   } else {
     console.log(`[DealSync] No new deals to publish | brandId=${brandId}`);
+  }
+
+  if (newlyInsertedDeals.length > 0) {
+    console.log(`[DealSync] Starting metadata enrichment | total=${newlyInsertedDeals.length}`);
+
+    let enrichedCount = 0;
+    let enrichmentFailedCount = 0;
+
+    const enrichmentResults = await metadataEnrichmentService.enrichDealsMetadata(newlyInsertedDeals, brandId);
+    const resultByDealId = new Map(enrichmentResults.map((entry) => [entry.dealId, entry.metadata]));
+
+    const bulkUpdates: Array<{
+      updateOne: {
+        filter: { _id: mongoose.Types.ObjectId };
+        update: {
+          $set: {
+            metadata: Record<string, unknown>;
+            metadataEnrichedAt: Date;
+            metadataSource: string;
+          };
+        };
+      };
+    }> = [];
+
+    for (const deal of newlyInsertedDeals) {
+      const metadata = resultByDealId.get(deal.dealId);
+      if (!metadata) {
+        enrichmentFailedCount += 1;
+        continue;
+      }
+
+      enrichedCount += 1;
+      bulkUpdates.push({
+        updateOne: {
+          filter: { _id: deal._id as mongoose.Types.ObjectId },
+          update: {
+            $set: {
+              metadata,
+              metadataEnrichedAt: new Date(),
+              metadataSource: "groq",
+            },
+          },
+        },
+      });
+    }
+
+    if (bulkUpdates.length > 0) {
+      await DealModel.bulkWrite(bulkUpdates, { ordered: false });
+    }
+
+    console.log(
+      `[DealSync] Metadata enrichment summary | total=${newlyInsertedDeals.length} | enriched=${enrichedCount} | failed=${enrichmentFailedCount}`
+    );
   }
 }
 
