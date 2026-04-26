@@ -1,44 +1,87 @@
-export interface FilteredDealsQuery {
-  brand?: string;
-  minPrice?: string;
-  maxPrice?: string;
-  query?: string;
-}
-
 export interface RecommendedDealsQuery {
   userId?: string;
   limit?: number;
 }
 
 class DealsService {
-  async getFilteredDeals(query: FilteredDealsQuery) {
-    const dealsServiceBaseUrl =
-      process.env.deals_url ?? process.env.DEALS_URL ?? "http://localhost:5002";
+  private getDealsServiceBaseUrl() {
+    return process.env.deals_url ?? process.env.DEALS_URL ?? "http://localhost:5002";
+  }
 
+  private buildQueryString(query: Record<string, unknown>) {
     const searchParams = new URLSearchParams();
 
     for (const [key, value] of Object.entries(query)) {
       if (typeof value === "string" && value.trim().length > 0) {
-        searchParams.set(key, value.trim());
+        searchParams.append(key, value.trim());
+        continue;
+      }
+
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (typeof item === "string" && item.trim().length > 0) {
+            searchParams.append(key, item.trim());
+          }
+        }
       }
     }
 
-    const url = `${dealsServiceBaseUrl.replace(/\/$/, "")}/api/deals${
-      searchParams.toString() ? `?${searchParams.toString()}` : ""
+    return searchParams.toString();
+  }
+
+  private async fetchFromDealsService(pathname: string, query?: Record<string, unknown>) {
+    const dealsServiceBaseUrl =
+      this.getDealsServiceBaseUrl();
+
+    const queryString = query ? this.buildQueryString(query) : "";
+    const url = `${dealsServiceBaseUrl.replace(/\/$/, "")}${pathname}${
+      queryString ? `?${queryString}` : ""
     }`;
 
-    console.log("[Gateway] Forwarding filtered deals request to:", url);
+    console.log("[Gateway] Forwarding deals request to:", url);
 
     const response = await fetch(url);
 
-    console.log("[Gateway] Deals service response status:", response.status);
-
     if (!response.ok) {
-      throw new Error(`Failed to fetch filtered deals from deals service (${response.status}).`);
+      throw new Error(`Failed to fetch from deals service (${response.status}).`);
     }
 
-    const payload = (await response.json()) as { data?: unknown[] };
+    return response.json() as Promise<{ data?: unknown[] | unknown }>;
+  }
+
+  async getFilteredDeals(query: Record<string, unknown>) {
+    const payload = await this.fetchFromDealsService("/api/deals", query);
     return payload.data ?? [];
+  }
+
+  async getDealFilterOptions() {
+    const payload = await this.fetchFromDealsService("/api/deals/filters/options");
+    return payload.data ?? {};
+  }
+
+  async getDealFilterBrands() {
+    const payload = await this.fetchFromDealsService("/api/deals/filters/brands");
+    return payload.data ?? [];
+  }
+
+  async getDealFilterCuisineTags() {
+    const payload = await this.fetchFromDealsService("/api/deals/filters/cuisine-tags");
+    return payload.data ?? [];
+  }
+
+  async getDealFilterMealTypes() {
+    const payload = await this.fetchFromDealsService("/api/deals/filters/meal-types");
+    return payload.data ?? [];
+  }
+
+  async getDealFilterPriceRange() {
+    const payload = await this.fetchFromDealsService("/api/deals/filters/price-range");
+    return payload.data ?? { min: 0, max: 0 };
+  }
+
+  async getDealById(dealId: string) {
+    const payload = await this.fetchFromDealsService(`/api/deals/${dealId}`);
+    return payload.data ?? null;
   }
 
   async getRecommendedDeals(_query: RecommendedDealsQuery) {

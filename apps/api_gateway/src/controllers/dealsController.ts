@@ -1,7 +1,6 @@
 import { RequestHandler } from "express";
 import {
   dealsService,
-  type FilteredDealsQuery,
   type RecommendedDealsQuery,
 } from "../services/dealsService.js";
 
@@ -26,20 +25,13 @@ export const getBrands: RequestHandler = async (req, res, next) => {
 
 export const getFilteredDeals: RequestHandler = async (req, res, next) => {
   try {
-    const query: FilteredDealsQuery = {
-      brand: typeof req.query.brand === "string" ? req.query.brand : undefined,
-      minPrice:
-        typeof req.query.minPrice === "string" ? req.query.minPrice : undefined,
-      maxPrice:
-        typeof req.query.maxPrice === "string" ? req.query.maxPrice : undefined,
-      query: typeof req.query.query === "string" ? req.query.query : undefined,
-    };
+    const query = req.query;
 
     console.log("[Gateway] GET /api/deals/filtered query:", query);
 
     const deals = await dealsService.getFilteredDeals(query);
 
-    console.log("[Gateway] Filtered deals fetched:", deals.length);
+    console.log("[Gateway] Filtered deals fetched:", Array.isArray(deals) ? deals.length : 0);
 
     res.status(200).json({
       success: true,
@@ -48,6 +40,92 @@ export const getFilteredDeals: RequestHandler = async (req, res, next) => {
     });
   } catch (error) {
     console.error("[Gateway] getFilteredDeals failed:", error);
+    next(error);
+  }
+};
+
+export const getDealFilterOptions: RequestHandler = async (_req, res, next) => {
+  try {
+    const options = await dealsService.getDealFilterOptions();
+
+    res.status(200).json({
+      success: true,
+      data: options,
+      message: "Deal filter options fetched successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getDealFilterBrands: RequestHandler = async (_req, res, next) => {
+  try {
+    const brands = await dealsService.getDealFilterBrands();
+
+    res.status(200).json({
+      success: true,
+      data: brands,
+      message: "Deal filter brands fetched successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getDealFilterCuisineTags: RequestHandler = async (_req, res, next) => {
+  try {
+    const tags = await dealsService.getDealFilterCuisineTags();
+
+    res.status(200).json({
+      success: true,
+      data: tags,
+      message: "Deal filter cuisine tags fetched successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getDealFilterMealTypes: RequestHandler = async (_req, res, next) => {
+  try {
+    const mealTypes = await dealsService.getDealFilterMealTypes();
+
+    res.status(200).json({
+      success: true,
+      data: mealTypes,
+      message: "Deal filter meal types fetched successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getDealFilterPriceRange: RequestHandler = async (_req, res, next) => {
+  try {
+    const range = await dealsService.getDealFilterPriceRange();
+
+    res.status(200).json({
+      success: true,
+      data: range,
+      message: "Deal filter price range fetched successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getDealById: RequestHandler = async (req, res, next) => {
+  try {
+    const dealId = typeof req.params.dealId === "string" ? req.params.dealId : undefined;
+
+    const deal = await dealsService.getDealById(dealId);
+
+    res.status(200).json({
+      success: true,
+      data: deal,
+      message: "Deal fetched successfully",
+    });
+  } catch (error) {
     next(error);
   }
 };
