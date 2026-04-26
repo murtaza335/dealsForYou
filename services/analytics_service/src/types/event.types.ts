@@ -1,0 +1,5 @@
+export enum EventType {
+  DEAL_VIEW = "DEAL_VIEW",
+  EXTERNAL_LINK = "EXTERNAL_LINK",
+  SEARCH_QUERY = "SEARCH_QUERY",
+}

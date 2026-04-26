@@ -2,6 +2,7 @@ import amqplib, { type Channel, type ChannelModel, type ConsumeMessage } from "a
 import { buildDealText } from "../utils/dealTextBuilder.js";
 import { embeddingService } from "./embeddingService.js";
 import { env } from "../config/env.js";
+import { UserEventModel } from "../models/userEvent.model.js";
 
 let connection: ChannelModel | null = null;
 let channel: Channel | null = null;
@@ -27,6 +28,18 @@ type DealEventPayload = {
     brandName?: string;
     locations?: string[];
   };
+};
+
+type AnalyticsEventPayload = {
+  action: "deal_view" | "click_external_link" | "search_query";
+  userId: string;
+  dealId: string | null;
+  queryText: string | null;
+  source: string | null;
+  sessionId: string;
+  dwellTime: number | null;
+  url: string | null;
+  occurredAt: string;
 };
 
 async function handleMessage(msg: ConsumeMessage) {
@@ -71,6 +84,24 @@ async function handleMessage(msg: ConsumeMessage) {
   });
 }
 
+async function handleAnalyticsMessage(msg: ConsumeMessage) {
+  const payload = JSON.parse(msg.content.toString()) as AnalyticsEventPayload;
+
+  await UserEventModel.create({
+    userId: payload.userId,
+    dealId: payload.dealId,
+    action: payload.action,
+    queryText: payload.queryText ?? null,
+    metadata: {
+      source: payload.source ?? "unknown",
+      sessionId: payload.sessionId,
+      dwellTime: payload.dwellTime ?? null,
+      url: payload.url ?? null,
+    },
+    occurredAt: payload.occurredAt ? new Date(payload.occurredAt) : new Date(),
+  });
+}
+
 export async function initRabbitMQSubscriber(): Promise<void> {
   connection = await amqplib.connect(env.RABBITMQ_URL);
   channel = await connection.createChannel();
@@ -93,6 +124,7 @@ export async function initRabbitMQSubscriber(): Promise<void> {
 
   await channel.assertExchange("deals.events", "direct", { durable: true });
   await channel.assertQueue("recommendation.deals.embedding.queue", { durable: true });
+  await channel.assertQueue("analytics_recommendation.queue", { durable: true });
 
   await channel.bindQueue("recommendation.deals.embedding.queue", "deals.events", "deal_created");
   await channel.bindQueue("recommendation.deals.embedding.queue", "deals.events", "deal_updated");
@@ -113,6 +145,22 @@ export async function initRabbitMQSubscriber(): Promise<void> {
     },
     { noAck: false }
   );
+
+  await channel.consume(
+    "analytics_recommendation.queue",
+    async (msg) => {
+      if (!msg || !channel) return;
+
+      try {
+        await handleAnalyticsMessage(msg);
+        channel.ack(msg);
+      } catch (error) {
+        console.error("Analytics queue consumer failed:", error);
+        channel.nack(msg, false, false);
+      }
+    },
+    { noAck: false }
+  );
 }
 
 export async function closeSubscriber(): Promise<void> {
@@ -126,3 +174,6 @@ export async function closeSubscriber(): Promise<void> {
     connection = null;
   }
 }
+
+
+
