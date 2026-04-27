@@ -3,6 +3,7 @@ import { buildDealText } from "../utils/dealTextBuilder.js";
 import { embeddingService } from "./embeddingService.js";
 import { env } from "../config/env.js";
 import { UserEventModel } from "../models/userEvent.model.js";
+import { updateUserMoodProfile } from "./userMoodProfile.service.js";
 
 let connection: ChannelModel | null = null;
 let channel: Channel | null = null;
@@ -31,7 +32,7 @@ type DealEventPayload = {
 };
 
 type AnalyticsEventPayload = {
-  action: "deal_view" | "click_external_link" | "search_query";
+  action: "deal_view" | "click_view_detail" | "click_external_link" | "search_query";
   userId: string;
   dealId: string | null;
   queryText: string | null;
@@ -86,6 +87,7 @@ async function handleMessage(msg: ConsumeMessage) {
 
 async function handleAnalyticsMessage(msg: ConsumeMessage) {
   const payload = JSON.parse(msg.content.toString()) as AnalyticsEventPayload;
+  const occurredAt = payload.occurredAt ? new Date(payload.occurredAt) : new Date();
 
   await UserEventModel.create({
     userId: payload.userId,
@@ -98,7 +100,16 @@ async function handleAnalyticsMessage(msg: ConsumeMessage) {
       dwellTime: payload.dwellTime ?? null,
       url: payload.url ?? null,
     },
-    occurredAt: payload.occurredAt ? new Date(payload.occurredAt) : new Date(),
+    occurredAt,
+  });
+
+  await updateUserMoodProfile({
+    userId: payload.userId,
+    sessionId: payload.sessionId,
+    action: payload.action,
+    dealId: payload.dealId,
+    queryText: payload.queryText,
+    occurredAt,
   });
 }
 

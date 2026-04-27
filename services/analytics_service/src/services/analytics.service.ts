@@ -4,10 +4,14 @@ import { EventType } from "../types/event.types.js";
 import { getDecayFactor } from "../utils/decay.js";
 import { publishRecommendationEvent } from "../utils/recommendationPublisher.js";
 
-function toRecommendationAction(eventType: EventType): "deal_view" | "click_external_link" | "search_query" | null {
+function toRecommendationAction(
+  eventType: EventType
+): "deal_view" | "click_view_detail" | "click_external_link" | "search_query" | null {
   switch (eventType) {
     case EventType.DEAL_VIEW:
       return "deal_view";
+    case EventType.CLICK_VIEW_DETAIL:
+      return "click_view_detail";
     case EventType.EXTERNAL_LINK:
       return "click_external_link";
     case EventType.SEARCH_QUERY:
@@ -26,6 +30,9 @@ export class AnalyticsService {
     switch (data.eventType) {
       case EventType.DEAL_VIEW:
         scoreDelta = 1;
+        break;
+      case EventType.CLICK_VIEW_DETAIL:
+        scoreDelta = 1.5;
         break;
       case EventType.EXTERNAL_LINK:
         scoreDelta = 2;
@@ -93,11 +100,11 @@ export class AnalyticsService {
       },
     };
 
-    if (data.eventType === "DEAL_VIEW") {
+    if (data.eventType === EventType.DEAL_VIEW) {
       update.$inc.viewCount = 1;
     }
 
-    if (data.eventType === "EXTERNAL_LINK") {
+    if (data.eventType === EventType.EXTERNAL_LINK) {
       update.$inc.externalClickCount = 1;
     }
 

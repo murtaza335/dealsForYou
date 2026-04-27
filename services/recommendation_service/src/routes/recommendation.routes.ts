@@ -1,5 +1,6 @@
 import express from "express";
 import { DealEmbeddingModel } from "../models/dealEmbedding.model.js";
+import { UserMoodProfileModel } from "../models/userMoodProfile.model.js";
 import { rebuildUserProfile } from "../services/userProfile.service.js";
 import { env } from "../config/env.js";
 
@@ -27,6 +28,79 @@ function scoreStructured(
 
   return 0.4 * popularityScore + 0.2 * hotScore + 0.2 * freshnessScore + 0.2 * interactionStrength;
 }
+
+function parseLimit(value: unknown, fallback: number): number {
+  const parsed = typeof value === "string" ? Number(value) : Number(value ?? fallback);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(50, Math.max(1, parsed));
+}
+
+router.get("/recommendations/current-mood/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const sessionId = typeof req.query.sessionId === "string" ? req.query.sessionId.trim() : "";
+
+    if (!sessionId) {
+      return res.status(400).json({ error: "sessionId is required" });
+    }
+
+    const limit = parseLimit(req.query.limit, 6);
+    const moodProfile = await UserMoodProfileModel.findOne({ userId, sessionId }).lean();
+    const sourceDealIds = moodProfile?.sourceDealIds ?? [];
+
+    if (!moodProfile?.moodVector?.length) {
+      return res.json({
+        recommendedDealIds: [],
+        coldStart: true,
+        computedAt: new Date().toISOString(),
+        reasonCodes: ["NO_CURRENT_MOOD_PROFILE"],
+        debug: [],
+      });
+    }
+
+    const candidates = await DealEmbeddingModel.aggregate([
+      {
+        $vectorSearch: {
+          index: env.VECTOR_INDEX_NAME,
+          path: "embedding",
+          queryVector: moodProfile.moodVector,
+          numCandidates: Math.max(env.RECOMMENDATION_CANDIDATES, limit * 10),
+          limit: Math.max(limit * 5, limit + sourceDealIds.length),
+          filter: {
+            isActive: true,
+            isExpired: false,
+          },
+        },
+      },
+      {
+        $project: {
+          dealId: 1,
+          semanticScore: { $meta: "vectorSearchScore" },
+        },
+      },
+    ]);
+
+    const sourceDealIdSet = new Set(sourceDealIds);
+    const ranked = candidates
+      .filter((doc) => !sourceDealIdSet.has(doc.dealId))
+      .slice(0, limit)
+      .map((doc) => ({
+        dealId: doc.dealId,
+        semanticScore: doc.semanticScore,
+      }));
+
+    return res.json({
+      recommendedDealIds: ranked.map((deal) => deal.dealId),
+      coldStart: false,
+      computedAt: new Date().toISOString(),
+      reasonCodes: ["CURRENT_SESSION_MOOD_VECTOR"],
+      debug: ranked,
+    });
+  } catch (err) {
+    console.error("Current mood recommendations error:", err);
+    return res.status(500).json({ error: "Failed to fetch current mood recommendations" });
+  }
+});
 
 router.post("/recommendations/refresh/:userId", async (req, res) => {
   try {

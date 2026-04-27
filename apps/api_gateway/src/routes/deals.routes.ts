@@ -7,6 +7,7 @@ import {
   getDealFilterOptions,
   getDealFilterPriceRange,
   getFilteredDeals,
+  getCurrentMoodDeals,
   getRecommendedDeals,
   getTopDeals,
   getBrands,
@@ -20,6 +21,7 @@ router.get("/filters/brands", getDealFilterBrands);
 router.get("/filters/cuisine-tags", getDealFilterCuisineTags);
 router.get("/filters/meal-types", getDealFilterMealTypes);
 router.get("/filters/price-range", getDealFilterPriceRange);
+router.get("/current-mood", getCurrentMoodDeals);
 router.get("/recommended", getRecommendedDeals);
 router.get("/top", getTopDeals);
 router.get("/:dealId", getDealById);

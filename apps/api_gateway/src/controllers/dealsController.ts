@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import {
   dealsService,
+  type CurrentMoodDealsQuery,
   type RecommendedDealsQuery,
 } from "../services/dealsService.js";
 
@@ -116,9 +117,17 @@ export const getDealFilterPriceRange: RequestHandler = async (_req, res, next) =
 
 export const getDealById: RequestHandler = async (req, res, next) => {
   try {
-    const dealId = typeof req.params.dealId === "string" ? req.params.dealId : undefined;
+    const dealId = typeof req.params.dealId === "string" ? req.params.dealId.trim() : "";
+
+    if (!dealId) {
+      return res.status(400).json({
+        success: false,
+        message: "dealId is required.",
+      });
+    }
 
     const deal = await dealsService.getDealById(dealId);
+
 
     res.status(200).json({
       success: true,
@@ -147,6 +156,34 @@ export const getRecommendedDeals: RequestHandler = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+export const getCurrentMoodDeals: RequestHandler = async (req, res, next) => {
+  try {
+    const query: CurrentMoodDealsQuery = {
+      userId: typeof req.query.userId === "string" ? req.query.userId : undefined,
+      sessionId: typeof req.query.sessionId === "string" ? req.query.sessionId : undefined,
+      limit:
+        typeof req.query.limit === "string" ? Number(req.query.limit) : undefined,
+    };
+
+    if (!query.userId || !query.sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId and sessionId are required.",
+      });
+    }
+
+    const deals = await dealsService.getCurrentMoodDeals(query);
+
+    return res.status(200).json({
+      success: true,
+      data: deals,
+      message: "Current mood deals fetched successfully",
+    });
+  } catch (error) {
+    return next(error);
   }
 };
 

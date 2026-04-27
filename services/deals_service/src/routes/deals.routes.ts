@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
 	getDealById,
+	getDealsByIds,
 	getDeals,
 	getFilterBrands,
 	getFilterCuisineTags,
@@ -19,4 +20,5 @@ dealsRouter.get("/filters/price-range", getFilterPriceRange);
 
 dealsRouter.get("/", getDeals);
 dealsRouter.get("/filtered", getDeals);
+dealsRouter.get("/bulk", getDealsByIds);
 dealsRouter.get("/:dealId", getDealById);
