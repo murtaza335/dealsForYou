@@ -17,6 +17,10 @@ class DealsService {
     return this.dealRepository.getDealById(dealId);
   }
 
+  async getDealsByIds(dealIds: string[]): Promise<DealDocument[]> {
+    return this.dealRepository.getDealsByIds(dealIds);
+  }
+
   async getFilterOptions(): Promise<DealFilterOptions> {
     return this.dealRepository.getFilterOptions();
   }

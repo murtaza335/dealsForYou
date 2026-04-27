@@ -41,6 +41,10 @@ export class MetricsBatchService {
         scoreDelta = 1;
       }
 
+      if (event.eventType === EventType.CLICK_VIEW_DETAIL) {
+        scoreDelta = 1.5;
+      }
+
       if (event.eventType === EventType.EXTERNAL_LINK) {
         agg.externalClickCount += 1;
         scoreDelta = 2;

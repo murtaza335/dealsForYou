@@ -3,9 +3,19 @@ export interface RecommendedDealsQuery {
   limit?: number;
 }
 
+export interface CurrentMoodDealsQuery {
+  userId?: string;
+  sessionId?: string;
+  limit?: number;
+}
+
 class DealsService {
   private getDealsServiceBaseUrl() {
     return process.env.deals_url ?? process.env.DEALS_URL ?? "http://localhost:5002";
+  }
+
+  private getRecommendationServiceBaseUrl() {
+    return process.env.RECOMMENDATION_URL ?? "http://localhost:3005";
   }
 
   private buildQueryString(query: Record<string, unknown>) {
@@ -49,6 +59,24 @@ class DealsService {
     return response.json() as Promise<{ data?: unknown[] | unknown }>;
   }
 
+  private async fetchFromRecommendationService(pathname: string, query?: Record<string, unknown>) {
+    const recommendationServiceBaseUrl = this.getRecommendationServiceBaseUrl();
+    const queryString = query ? this.buildQueryString(query) : "";
+    const url = `${recommendationServiceBaseUrl.replace(/\/$/, "")}${pathname}${
+      queryString ? `?${queryString}` : ""
+    }`;
+
+    console.log("[Gateway] Forwarding recommendation request to:", url);
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch from recommendation service (${response.status}).`);
+    }
+
+    return response.json() as Promise<{ recommendedDealIds?: string[] }>;
+  }
+
   async getFilteredDeals(query: Record<string, unknown>) {
     const payload = await this.fetchFromDealsService("/api/deals", query);
     return payload.data ?? [];
@@ -84,9 +112,68 @@ class DealsService {
     return payload.data ?? null;
   }
 
-  async getRecommendedDeals(_query: RecommendedDealsQuery) {
-    
-    return [];
+  async getDealsByIds(dealIds: string[]) {
+    if (!dealIds.length) {
+      return [];
+    }
+
+    const payload = await this.fetchFromDealsService("/api/deals/bulk", {
+      ids: dealIds,
+    });
+
+    return payload.data ?? [];
+  }
+
+  async getRecommendedDeals(query: RecommendedDealsQuery) {
+    if (!query.userId) {
+      throw new Error("userId is required.");
+    }
+
+    const recommendationServiceBaseUrl = this.getRecommendationServiceBaseUrl();
+    const url = `${recommendationServiceBaseUrl.replace(/\/$/, "")}/api/recommendations/refresh/${encodeURIComponent(
+      query.userId
+    )}`;
+
+    console.log("[Gateway] Forwarding recommended deals request to:", url);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        limit: query.limit,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch recommendations (${response.status}).`);
+    }
+
+    const payload = (await response.json()) as { recommendedDealIds?: string[] };
+    const dealIds = payload.recommendedDealIds ?? [];
+    return this.getDealsByIds(dealIds);
+  }
+
+  async getCurrentMoodDeals(query: CurrentMoodDealsQuery) {
+    if (!query.userId) {
+      throw new Error("userId is required.");
+    }
+
+    if (!query.sessionId) {
+      throw new Error("sessionId is required.");
+    }
+
+    const payload = await this.fetchFromRecommendationService(
+      `/api/recommendations/current-mood/${encodeURIComponent(query.userId)}`,
+      {
+        sessionId: query.sessionId,
+        limit: query.limit ? String(query.limit) : undefined,
+      }
+    );
+
+    const dealIds = payload.recommendedDealIds ?? [];
+    return this.getDealsByIds(dealIds);
   }
 
   async getTopDeals(_limit?: number) {

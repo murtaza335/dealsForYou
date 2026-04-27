@@ -4,6 +4,7 @@ import { startServer } from "./server.js";
 import "./models/dealEmbedding.model.js";
 import "./models/userEvent.model.js";
 import "./models/userProfile.mode.js";
+import "./models/userMoodProfile.model.js";
 import { initRabbitMQSubscriber, closeSubscriber } from "./services/rabbitmq.subscriber.js";
 
 async function bootstrap(): Promise<void> {
@@ -12,6 +13,7 @@ async function bootstrap(): Promise<void> {
   await mongoose.connection.createCollection("deal_embeddings");
   await mongoose.connection.createCollection("user_events");
   await mongoose.connection.createCollection("user_profiles");
+  await mongoose.connection.createCollection("user_mood_profiles");
 
   const server = startServer();
     // Initialize RabbitMQ subscriber for deal embeddings

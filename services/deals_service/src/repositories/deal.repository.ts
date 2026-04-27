@@ -462,6 +462,27 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
     return await DealModel.findOne({ dealId: dealId });
   }
 
+  async getDealsByIds(dealIds: string[]): Promise<DealDocument[]> {
+    const uniqueDealIds = [...new Set(dealIds.map((dealId) => dealId.trim()).filter(Boolean))];
+
+    if (!uniqueDealIds.length) {
+      return [];
+    }
+
+    const deals = await DealModel.find({ dealId: { $in: uniqueDealIds } });
+    const dealsById = new Map(deals.map((deal) => [deal.dealId, deal]));
+    const orderedDeals: DealDocument[] = [];
+
+    for (const dealId of uniqueDealIds) {
+      const deal = dealsById.get(dealId);
+      if (deal) {
+        orderedDeals.push(deal);
+      }
+    }
+
+    return orderedDeals;
+  }
+
   async getDeals(filters: DealFilters): Promise<DealsListResult> {
     const mongoFilter: Record<string, unknown> = {};
 

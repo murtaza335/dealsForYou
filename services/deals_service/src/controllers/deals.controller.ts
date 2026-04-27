@@ -198,6 +198,29 @@ export const getDealById = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
+export const getDealsByIds = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const dealIds = parseStringListQuery(req.query.ids);
+
+    if (!dealIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: "ids query parameter is required.",
+      });
+    }
+
+    const deals = await dealsService.getDealsByIds(dealIds);
+
+    return res.status(200).json({
+      success: true,
+      message: "Deals fetched successfully.",
+      data: deals,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getFilterOptions = async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const options = await dealsService.getFilterOptions();
