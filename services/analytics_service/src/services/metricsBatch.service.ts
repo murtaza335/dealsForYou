@@ -36,13 +36,9 @@ export class MetricsBatchService {
 
       let scoreDelta = 0;
 
-      if (event.eventType === EventType.DEAL_VIEW) {
+      if (event.eventType === EventType.CLICK_VIEW_DETAIL) {
         agg.viewCount += 1;
         scoreDelta = 1;
-      }
-
-      if (event.eventType === EventType.CLICK_VIEW_DETAIL) {
-        scoreDelta = 1.5;
       }
 
       if (event.eventType === EventType.EXTERNAL_LINK) {
