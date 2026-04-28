@@ -2,7 +2,7 @@ import { DealEmbeddingModel } from "../models/dealEmbedding.model.js";
 import { UserMoodProfileModel } from "../models/userMoodProfile.model.js";
 import { embeddingService } from "./embeddingService.js";
 
-type MoodAction = "deal_view" | "click_view_detail" | "click_external_link" | "search_query";
+type MoodAction = "click_view_detail" | "click_external_link" | "search_query";
 
 export type UpdateMoodProfilePayload = {
   userId: string;
@@ -82,7 +82,6 @@ export async function updateUserMoodProfile(payload: UpdateMoodProfilePayload): 
     searches: existing?.signalsUsed?.searches ?? 0,
   };
 
-  if (payload.action === "deal_view") signalsUsed.views += 1;
   if (payload.action === "click_view_detail" || payload.action === "click_external_link") signalsUsed.clicks += 1;
   if (payload.action === "search_query") signalsUsed.searches += 1;
 
