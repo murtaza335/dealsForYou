@@ -72,6 +72,26 @@ export function HomeDashboard() {
     }
   }, [userId]);
 
+  const fetchTopDeals = useCallback(async () => {
+    setLoadingTop(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/analytics/trending/deals`);
+      if (!response.ok) {
+        throw new Error("Could not fetch top deals.");
+      }
+
+      const payload: ApiResponse = await response.json();
+      console.log("Top deals:", payload.data);
+      setTopDeals(payload.data ?? []);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Unexpected error.");
+      setTopDeals([]);
+    } finally {
+      setLoadingTop(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isSignedIn) {
@@ -80,10 +100,11 @@ export function HomeDashboard() {
 
     const timer = setTimeout(() => {
       void fetchRecommendedDeals();
+      void fetchTopDeals();
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [isSignedIn, fetchRecommendedDeals]);
+  }, [isSignedIn, fetchRecommendedDeals, fetchTopDeals]);
 
 
 
