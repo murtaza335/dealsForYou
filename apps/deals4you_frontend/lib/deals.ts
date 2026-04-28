@@ -21,7 +21,7 @@ export const buildQuery = (params: Record<string, string | undefined>) => {
   const searchParams = new URLSearchParams();
 
   for (const [key, value] of Object.entries(params)) {
-    if (value && value.trim().length > 0) {
+    if (typeof value === "string" && value.trim().length > 0) {
       searchParams.set(key, value.trim());
     }
   }

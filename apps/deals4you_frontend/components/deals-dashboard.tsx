@@ -67,6 +67,7 @@ export function DealsDashboard() {
       }
 
       const payload: ApiResponse = await response.json();
+      console.log("Fetched deals:", payload.data);
       setFilteredDeals(payload.data ?? []);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unexpected error.");
@@ -78,7 +79,7 @@ export function DealsDashboard() {
 
   const fetchBrands = useCallback(async () => {
     try {
-      const response = await fetch(`${apiBaseUrl}/api/deals/brands`);
+      const response = await fetch(`${apiBaseUrl}/api/deals/filters/brands`);
       if (!response.ok) {
         throw new Error("Could not fetch brands.");
       }
