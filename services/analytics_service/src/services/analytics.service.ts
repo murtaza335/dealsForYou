@@ -50,7 +50,7 @@ export class AnalyticsService {
     // if (data.dealId) {
     //   await this.updateDealMetrics(data);
     // }
-    
+
     const action = toRecommendationAction(data.eventType);
     if (action) {
       console.log(`Publishing recommendation event for action: ${action}, userId: ${data.userId}, dealId: ${data.dealId}`);

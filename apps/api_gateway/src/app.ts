@@ -2,6 +2,7 @@ import express, { Application } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import dealsRoutes from "./routes/deals.routes";
+import analyticsRoutes from "./routes/analytics.routes";
 import { notFoundHandler } from "./middlewares/notFoundHandler";
 import { errorHandler } from "./middlewares/errorHandler";
 
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use("/api/deals", dealsRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // Error middlewares
 app.use(notFoundHandler);
