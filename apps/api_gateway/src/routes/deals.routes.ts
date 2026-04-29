@@ -11,7 +11,7 @@ import {
   getRecommendedDeals,
   getTopDeals,
   getBrands,
-} from "../controllers/dealsController";
+} from "../controllers/dealsController.js";
 
 const router = Router();
 

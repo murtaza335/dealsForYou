@@ -1,13 +1,22 @@
 import { Router } from "express";
 import { requireAuth, requireRole } from "../middlewares/auth.js";
 import { USER_ROLES } from "../types/role.type.js";
-import { getMe, listUsers, updateMe, upsertFromClerk } from "../controllers/user.controller.js";
+import {
+  getMe,
+  listUsers,
+  onboardBrandAdmin,
+  onboardConsumer,
+  updateMe,
+  upsertFromClerk,
+} from "../controllers/user.controller.js";
 
 export const userRouter = Router();
 
 userRouter.get("/me", requireAuth, getMe);
 userRouter.patch("/me", requireAuth, updateMe);
 userRouter.post("/upsert-from-clerk", requireAuth, upsertFromClerk);
+userRouter.post("/onboard/consumer", onboardConsumer);
+userRouter.post("/onboard/brand-admin", onboardBrandAdmin);
 
 userRouter.get(
   "/admin/users",

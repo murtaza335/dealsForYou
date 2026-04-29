@@ -22,6 +22,7 @@ export interface UpsertUserPayload {
   role?: UserRole;
   brandId?: string | null;
   metadata?: Record<string, unknown>;
+  isActive?: boolean;
 }
 
 export interface UpdateMyProfilePayload {

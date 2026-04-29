@@ -1,9 +1,15 @@
 import type { RequestHandler } from "express";
 import { AppError } from "../error.js";
-import { updateMyProfileSchema, upsertUserSchema } from "../models/user.model.js";
+import {
+  onboardBrandAdminSchema,
+  onboardConsumerSchema,
+  updateMyProfileSchema,
+  upsertUserSchema,
+} from "../models/user.model.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import { UserService } from "../services/user.service.js";
 import { getDb } from "../config/db.js";
+import { env } from "../config/env.js";
 
 const getService = (): UserService => {
   const db = getDb();
@@ -29,7 +35,57 @@ export const getMe: RequestHandler = async (_req, res, next) => {
       });
     }
 
+    let brand: unknown = null;
+    if (user.brandId) {
+      try {
+        const response = await fetch(
+          `${env.DEALS_SERVICE_URL.replace(/\/$/, "")}/api/brands/by-brand-id/${encodeURIComponent(user.brandId)}`
+        );
+        if (response.ok) {
+          const payload = (await response.json()) as { data?: unknown };
+          brand = payload.data ?? null;
+        }
+      } catch (error) {
+        console.warn("Failed to fetch linked brand:", error);
+      }
+    }
+
     return res.status(200).json({
+      success: true,
+      data: { ...user, brand },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const onboardConsumer: RequestHandler = async (req, res, next) => {
+  try {
+    const payload = onboardConsumerSchema.parse(req.body);
+    const service = getService();
+    const user = await service.onboardConsumer(payload);
+
+    return res.status(201).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const onboardBrandAdmin: RequestHandler = async (req, res, next) => {
+  try {
+    const payload = onboardBrandAdminSchema.parse(req.body);
+
+    if (payload.brand.scrapeRequested && !payload.brand.website) {
+      throw new AppError("Website URL is required when scraper is requested.", 400);
+    }
+
+    const service = getService();
+    const user = await service.onboardBrandAdmin(payload);
+
+    return res.status(201).json({
       success: true,
       data: user,
     });

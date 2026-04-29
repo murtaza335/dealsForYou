@@ -1,267 +1,119 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react'
-import { useAuth, useSignIn } from '@clerk/nextjs'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect } from "react";
+import { useAuth, useSignIn, useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { apiBaseUrl, fetchDomainUser, getRoleHomePath } from "@/lib/deals";
 
-type OAuthStrategy = 'oauth_google'
+type OAuthStrategy = "oauth_google";
 
 export default function Page() {
-  const { signIn, errors, fetchStatus } = useSignIn()
-  const { isLoaded, isSignedIn } = useAuth()
-  const router = useRouter()
+  const { signIn, errors, fetchStatus } = useSignIn();
+  const { isLoaded, isSignedIn, getToken } = useAuth();
+  const { user } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      router.replace('/deals')
-    }
-  }, [isLoaded, isSignedIn, router])
+    if (!isLoaded || !isSignedIn) return;
 
-  
-  const handleSubmit = async (formData: FormData) => {
-    const emailAddress = formData.get('email') as string
-    const password = formData.get('password') as string
+    const redirect = async () => {
+      const token = await getToken();
+      let domainUser = await fetchDomainUser(token).catch(() => null);
 
-    const { error } = await signIn.password({
-      emailAddress,
-      password,
-    })
-    if (error) {
-      console.error(JSON.stringify(error, null, 2))
-      return
-    }
-
-    if (signIn.status === 'complete') {
-      await signIn.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          // Handle session tasks
-          // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
-          if (session?.currentTask) {
-            console.log(session?.currentTask)
-            return
-          }
-
-          // If no session tasks, navigate the signed-in user to deals page
-          const url = decorateUrl('/deals')
-          if (url.startsWith('http')) {
-            window.location.href = url
-          } else {
-            router.push(url)
-          }
-        },
-      })
-    } else if (signIn.status === 'needs_second_factor') {
-      // See https://clerk.com/docs/guides/development/custom-flows/authentication/multi-factor-authentication
-    } else if (signIn.status === 'needs_client_trust') {
-      // For other second factor strategies,
-      // see https://clerk.com/docs/guides/development/custom-flows/authentication/client-trust
-      const emailCodeFactor = signIn.supportedSecondFactors.find(
-        (factor) => factor.strategy === 'email_code',
-      )
-
-      if (emailCodeFactor) {
-        await signIn.mfa.sendEmailCode()
+      if (!domainUser && user) {
+        await fetch(`${apiBaseUrl}/api/users/onboard/consumer`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clerkUserId: user.id,
+            email: user.primaryEmailAddress?.emailAddress ?? "",
+            firstName: user.firstName ?? "User",
+            lastName: user.lastName ?? "",
+            foodPreferences: [],
+          }),
+        }).catch(() => null);
+        domainUser = await fetchDomainUser(token).catch(() => null);
       }
-    } else {
-      // Check why the sign-in is not complete
-      console.error('Sign-in attempt not complete:', signIn)
-    }
-  }
 
-  const handleVerify = async (formData: FormData) => {
-    const code = formData.get('code') as string
+      router.replace(getRoleHomePath(domainUser));
+    };
 
-    await signIn.mfa.verifyEmailCode({ code })
+    void redirect();
+  }, [getToken, isLoaded, isSignedIn, router, user]);
 
-    if (signIn.status === 'complete') {
+  const handleSubmit = async (formData: FormData) => {
+    const emailAddress = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    const { error } = await signIn.password({ emailAddress, password });
+    if (error) return;
+
+    if (signIn.status === "complete") {
       await signIn.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          // Handle session tasks
-          // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
-          if (session?.currentTask) {
-            console.log(session?.currentTask)
-            return
-          }
-
-          // If no session tasks, navigate the signed-in user to deals page
-          const url = decorateUrl('/deals')
-          if (url.startsWith('http')) {
-            window.location.href = url
-          } else {
-            router.push(url)
-          }
+        navigate: ({ session }) => {
+          if (session?.currentTask) return;
+          router.push("/");
         },
-      })
-    } else {
-      // Check why the sign-in is not complete
-      console.error('Sign-in attempt not complete:', signIn)
+      });
     }
-  }
-
+  };
 
   const signInWithOauth = async (strategy: OAuthStrategy) => {
-    const { error } = await signIn.sso({
+    await signIn.sso({
       strategy,
-      redirectUrl: '/deals',
-      redirectCallbackUrl: '/sso-callback',
-    })
-    if (error) {
-      console.error(JSON.stringify(error, null, 2))
-      return
-    }
-
-    if (signIn.status === 'needs_second_factor') {
-      // See https://clerk.com/docs/guides/development/custom-flows/authentication/multi-factor-authentication
-    } else if (signIn.status === 'needs_client_trust') {
-      // See https://clerk.com/docs/guides/development/custom-flows/authentication/client-trust
-    } else {
-      // Check why the sign-in is not complete
-      console.log('Sign-in attempt not complete:', signIn, 2, null)
-    }
-  }
-
-
-  if (signIn.status === 'needs_client_trust') {
-    return (
-      <main className="min-h-screen bg-gradient-to-br from-sky-100 via-cyan-50 to-emerald-100 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-5xl items-center justify-center">
-          <section className="w-full max-w-md rounded-3xl border border-white/70 bg-white/80 p-7 shadow-xl backdrop-blur sm:p-8">
-            <p className="mb-3 inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-800">
-              DealsForYou
-            </p>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Verify your account</h1>
-            <p className="mt-2 text-sm text-slate-600">Enter the code sent to your email to complete sign in.</p>
-
-            <form action={handleVerify} className="mt-6 grid gap-4">
-              <label htmlFor="code" className="grid gap-2 text-sm font-medium text-slate-700">
-                Verification code
-                <input
-                  id="code"
-                  name="code"
-                  type="text"
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
-                  placeholder="Enter code"
-                />
-              </label>
-
-              {errors.fields.code ? (
-                <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
-                  {errors.fields.code.message}
-                </p>
-              ) : null}
-
-              <button
-                type="submit"
-                disabled={fetchStatus === 'fetching'}
-                className="rounded-full bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {fetchStatus === 'fetching' ? 'Verifying...' : 'Verify'}
-              </button>
-            </form>
-
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <button
-                onClick={() => signIn.mfa.sendEmailCode()}
-                type="button"
-                className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
-              >
-                New code
-              </button>
-              <button
-                onClick={() => signIn.reset()}
-                type="button"
-                className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
-              >
-                Start over
-              </button>
-            </div>
-
-            <p className="mt-6 text-sm text-slate-600">
-              Need an account?{' '}
-              <Link href="/sign-up" className="font-semibold text-cyan-700 underline underline-offset-4">
-                Sign up
-              </Link>
-            </p>
-          </section>
-        </div>
-      </main>
-    )
-  }
+      redirectUrl: "/",
+      redirectCallbackUrl: "/sso-callback",
+    });
+  };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-sky-100 via-cyan-50 to-emerald-100 px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-5xl items-center justify-center">
-        <section className="w-full max-w-md rounded-3xl border border-white/70 bg-white/80 p-7 shadow-xl backdrop-blur sm:p-8">
-          <p className="mb-3 inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-800">
-            DealsForYou
-          </p>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Sign in</h1>
-          <p className="mt-2 text-sm text-slate-600">Welcome back. Continue to your personalized deals.</p>
-
-          <div className="mt-4 grid gap-3">
-            <button
-              type="button"
-              onClick={() => void signInWithOauth('oauth_google')}
-              disabled={fetchStatus === 'fetching'}
-              className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              Continue with Google
-            </button>
+    <main className="min-h-screen bg-[#151515] px-4 py-8 text-white">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center justify-center">
+        <section className="w-full max-w-xl rounded-[2rem] border border-white/10 bg-[#1f1f1f]/95 p-8 shadow-2xl shadow-black/40 sm:p-10">
+          <div className="flex justify-center">
+            <Image src="/assets/logoo.png" alt="DealsForYou" width={170} height={110} className="object-contain" priority />
           </div>
 
+          <div className="mt-2 text-center">
+            <h1 className="text-3xl font-bold tracking-tight text-white">Sign in</h1>
+            <p className="mt-2 text-sm text-slate-400">Continue to the right dashboard for your account.</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void signInWithOauth("oauth_google")}
+            disabled={fetchStatus === "fetching"}
+            className="mt-7 w-full rounded-full border border-white/10 bg-white px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-slate-200 disabled:opacity-60"
+          >
+            Continue with Google
+          </button>
+
           <form action={handleSubmit} className="mt-6 grid gap-4">
-            <label htmlFor="email" className="grid gap-2 text-sm font-medium text-slate-700">
+            <label htmlFor="email" className="grid gap-2 text-sm font-semibold text-slate-200">
               Email
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="you@example.com"
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
-              />
+              <input id="email" name="email" type="email" className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 text-white outline-none focus:border-red-500" />
             </label>
+            {errors.fields.identifier ? <p className="text-sm text-red-300">{errors.fields.identifier.message}</p> : null}
 
-            {errors.fields.identifier ? (
-              <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
-                {errors.fields.identifier.message}
-              </p>
-            ) : null}
-
-            <label htmlFor="password" className="grid gap-2 text-sm font-medium text-slate-700">
+            <label htmlFor="password" className="grid gap-2 text-sm font-semibold text-slate-200">
               Password
-              <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Your password"
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
-              />
+              <input id="password" name="password" type="password" className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 text-white outline-none focus:border-red-500" />
             </label>
+            {errors.fields.password ? <p className="text-sm text-red-300">{errors.fields.password.message}</p> : null}
 
-            {errors.fields.password ? (
-              <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
-                {errors.fields.password.message}
-              </p>
-            ) : null}
-
-            <button
-              type="submit"
-              disabled={fetchStatus === 'fetching'}
-              className="rounded-full bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {fetchStatus === 'fetching' ? 'Signing in...' : 'Continue'}
+            <button type="submit" disabled={fetchStatus === "fetching"} className="rounded-full bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-500 disabled:opacity-60">
+              {fetchStatus === "fetching" ? "Signing in..." : "Sign in"}
             </button>
           </form>
 
-          <p className="mt-6 text-sm text-slate-600">
-            New here?{' '}
-            <Link href="/sign-up" className="font-semibold text-cyan-700 underline underline-offset-4">
-              Create an account
-            </Link>
-          </p>
+          <div className="mt-7 flex flex-col gap-2 text-center text-sm text-slate-400 sm:flex-row sm:justify-center sm:gap-5">
+            <Link href="/sign-up" className="font-semibold text-yellow-400 hover:text-yellow-300">Sign up as user</Link>
+            <Link href="/sign-up/brand-admin" className="font-semibold text-yellow-400 hover:text-yellow-300">Sign up as brand admin</Link>
+          </div>
         </section>
       </div>
     </main>
-  )
+  );
 }

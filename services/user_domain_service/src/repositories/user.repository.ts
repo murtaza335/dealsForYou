@@ -52,14 +52,16 @@ export class UserRepository {
           last_name,
           role,
           brand_id,
+          is_active,
           metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (clerk_user_id) DO UPDATE SET
           email = EXCLUDED.email,
           first_name = EXCLUDED.first_name,
           last_name = EXCLUDED.last_name,
           role = EXCLUDED.role,
           brand_id = EXCLUDED.brand_id,
+          is_active = EXCLUDED.is_active,
           metadata = EXCLUDED.metadata,
           updated_at = NOW()
        RETURNING *`,
@@ -70,6 +72,7 @@ export class UserRepository {
         payload.lastName ?? null,
         payload.role ?? "END_USER",
         payload.brandId ?? null,
+        payload.isActive ?? true,
         payload.metadata ?? {},
       ],
     );

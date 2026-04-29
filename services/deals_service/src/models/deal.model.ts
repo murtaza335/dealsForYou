@@ -29,6 +29,9 @@ export interface DealDocument extends Document {
   metadata?: Record<string, unknown>;
   metadataEnrichedAt?: Date;
   metadataSource?: string;
+  sourceType?: "SCRAPER" | "MANUAL";
+  manuallyCreatedBy?: string;
+  deletedAt?: Date;
 }
 
 const dealSchema = new Schema<DealDocument>(
@@ -70,6 +73,9 @@ const dealSchema = new Schema<DealDocument>(
     metadata: { type: Schema.Types.Mixed },
     metadataEnrichedAt: { type: Date },
     metadataSource: { type: String },
+    sourceType: { type: String, enum: ["SCRAPER", "MANUAL"], default: "SCRAPER", index: true },
+    manuallyCreatedBy: { type: String },
+    deletedAt: { type: Date },
   },
   { timestamps: true }
 );
