@@ -9,7 +9,6 @@ const userEventSchema = new Schema(
       type: String, 
       enum: [
         "view_page_load",        // Page loaded (deal appeared in grid)
-        "deal_view",             // User scrolled/focused on deal card
         "click_view_detail",     // Clicked "View Details" button
         "click_external_link",   // Clicked link to restaurant site
         "search_query"           // User searched

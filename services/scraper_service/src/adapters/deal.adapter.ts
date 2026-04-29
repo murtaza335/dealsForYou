@@ -32,3 +32,20 @@ export const mapKfcDeals = (rawDeals: any[], brandSlug: string): Deal[] => {
     publishedAt: new Date()
   }));
 };
+
+// WrapLab deals mapper
+
+export const mapWrapLabDeals = (rawDeals: any[], brandSlug: string): Deal[] => {
+  return rawDeals.map((deal) => ({
+    externalId: Number(deal.id),
+    title: deal.name,
+    description: deal.description || "",
+    price: Number(deal.price || 0),
+    salePrice: Number(deal.salePrice ?? 0),
+    imgUrl: deal.imgUrl ?? "",
+    category: deal.category || "WrapLab Deals",
+    brandSlug, // "wraplab"
+    isActive: true,
+    publishedAt: new Date()
+  }));
+};
