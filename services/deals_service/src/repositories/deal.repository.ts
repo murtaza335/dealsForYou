@@ -463,29 +463,59 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[], brandInfo: { bra
     return await DealModel.findOne({ dealId: dealId });
   }
 
-  async getDealsByIds(dealIds: string[]): Promise<DealDocument[]> {
-    const uniqueDealIds = [...new Set(dealIds.map((dealId) => dealId.trim()).filter(Boolean))];
+  async getDealsByIds(
+  requestedDeals: Array<{ dealId: string; brandSlug: string }>
+): Promise<DealDocument[]> {
 
-    if (!uniqueDealIds.length) {
-      return [];
-    }
+  // Normalize input
+  const normalizedDeals = requestedDeals
+    .map((deal) => ({
+      externalId: String(deal.dealId).trim(),
+      brandSlug: String(deal.brandSlug).trim(),
+    }))
+    .filter((deal) => deal.externalId.length > 0 && deal.brandSlug.length > 0);
 
-    const deals = await DealModel.find({ dealId: { $in: uniqueDealIds } });
-    const dealsById = new Map<string, DealDocument>(
-      deals.map((deal: DealDocument) => [deal.dealId, deal] as [string, DealDocument])
-    );
-    const orderedDeals: DealDocument[] = [];
-
-    for (const dealId of uniqueDealIds) {
-      const deal = dealsById.get(dealId);
-      if (deal) {
-        orderedDeals.push(deal);
-      }
-    }
-
-    return orderedDeals;
+  if (!normalizedDeals.length) {
+    return [];
   }
 
+  // Build OR query
+  const orConditions = normalizedDeals.map((deal) => ({
+    externalId: deal.externalId,
+    brandSlug: deal.brandSlug,
+  }));
+
+  console.log("[DealRepository] Querying deals with criteria:", orConditions);
+
+  // Fetch from DB
+  const foundDeals = await DealModel.find({ $or: orConditions });
+
+  console.log("[DealRepository] Raw found deals count:", foundDeals.length);
+
+  // Build lookup map using CORRECT fields
+  const dealsByKey = new Map(
+    foundDeals.map((deal) => [
+      `${deal.externalId}:${deal.brandSlug}`,
+      deal,
+    ])
+  );
+
+  // Preserve input order
+  const orderedDeals: DealDocument[] = [];
+
+  for (const deal of normalizedDeals) {
+    const key = `${deal.externalId}:${deal.brandSlug}`;
+    const foundDeal = dealsByKey.get(key);
+
+    if (foundDeal) {
+      orderedDeals.push(foundDeal);
+    }
+  }
+
+  console.log("[DealRepository] Ordered deals count:", orderedDeals.length);
+
+  return orderedDeals;
+}
   async getDeals(filters: DealFilters): Promise<DealsListResult> {
     const mongoFilter: Record<string, unknown> = {};
 
