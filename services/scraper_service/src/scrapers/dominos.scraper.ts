@@ -4,6 +4,9 @@ import { mapDominosDeals } from "../adapters/deal.adapter.js";
 import { Deal } from "../interfaces/deal.interface.js";
 import { ScraperSourceDocument } from "../models/scraperSources.js";
 
+
+// the dominos menu/menudata api response has menu array in which there is array of groups and subgroups and menudata array that has the detail of all the items in the menu we filter those on the base of group id 11 as it is the deals group and only item that has data in the data array is return because the implement active deal by sending data for only active deals in the data array
+
 const normalizeImageUrl = (
   imagePath: string | undefined,
   imageBaseUrl: string
@@ -36,8 +39,6 @@ export class DominosScraper extends BaseScraper {
 
           // concat /images to the imageBaseUrl
       const imageBaseUrl = source.baseApiUrl + "/images" || "https://www.dominos.com.pk/images/";
-
-      console.log(imageBaseUrl);
 
       const response = await axios.post(
         source.scrapApiURl,

@@ -4,6 +4,8 @@ import { Deal } from "../interfaces/deal.interface.js";
 import { mapKfcDeals } from "../adapters/deal.adapter.js";
 import { ScraperSourceDocument } from "../models/scraperSources.js";
 
+// in kfc all groups api response the is array of group (that has the info of all groups), and also group data (that has the info of all items in that group we filter the deals that are in group 3 and 4 as they are the main deal groups, and also we check for group 6 (limited time offers) if they are active based on their serving hours, and for other groups we check if the item is combo like as most of the deals are combo like
+
 //  Time check as it also have midnight deal`s that are only available during night time so time check is required
 function isWithinServingHours(servingHours: string | null): boolean {
   if (!servingHours) return true;
