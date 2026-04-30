@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { DealCard } from "@/components/deal-card";
 import {
   apiBaseUrl,
+  withBearerToken,
   type ApiResponse,
   type Deal,
 } from "@/lib/deals";
@@ -33,7 +34,7 @@ function SectionEmptyState({
 
 export function HomeDashboard() {
   const { user } = useUser();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, getToken } = useAuth();
   const userId = user?.id;
 
   const [recommendedDeals, setRecommendedDeals] = useState<Deal[]>([]);
@@ -54,8 +55,12 @@ export function HomeDashboard() {
     setErrorMessage(null);
 
     try {
+      const token = await getToken();
       const response = await fetch(
         `${apiBaseUrl}/api/deals/recommended?userId=${encodeURIComponent(userId)}&limit=6`,
+        {
+          headers: withBearerToken(token),
+        }
       );
 
       if (!response.ok) {
@@ -70,14 +75,17 @@ export function HomeDashboard() {
     } finally {
       setLoadingRecommended(false);
     }
-  }, [userId]);
+  }, [userId, getToken]);
 
   const fetchTopDeals = useCallback(async () => {
     setLoadingTop(true);
     setErrorMessage(null);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/analytics/trending/deals`);
+      const token = await getToken();
+      const response = await fetch(`${apiBaseUrl}/api/analytics/trending/deals`, {
+        headers: withBearerToken(token),
+      });
       if (!response.ok) {
         throw new Error("Could not fetch top deals.");
       }
@@ -91,7 +99,7 @@ export function HomeDashboard() {
     } finally {
       setLoadingTop(false);
     }
-  }, []);
+  }, [getToken]);
 
   useEffect(() => {
     if (!isSignedIn) {

@@ -5,6 +5,7 @@ import dealsRoutes from "./routes/deals.routes";
 import analyticsRoutes from "./routes/analytics.routes";
 import { notFoundHandler } from "./middlewares/notFoundHandler";
 import { errorHandler } from "./middlewares/errorHandler";
+import { clerkMiddleware } from "@clerk/express";
 
 dotenv.config();
 
@@ -14,6 +15,13 @@ const app: Application = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(
+  clerkMiddleware({
+    publishableKey:
+      process.env.CLERK_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    secretKey: process.env.CLERK_SECRET_KEY,
+  })
+);
 
 // Routes
 app.use("/api/deals", dealsRoutes);

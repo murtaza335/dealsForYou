@@ -35,3 +35,16 @@ export const formatPrice = (price: number) =>
     currency: "PKR",
     maximumFractionDigits: 0,
   }).format(price);
+
+export const withBearerToken = (
+  token: string | null,
+  initHeaders?: HeadersInit
+): Headers => {
+  const headers = new Headers(initHeaders);
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  return headers;
+};
