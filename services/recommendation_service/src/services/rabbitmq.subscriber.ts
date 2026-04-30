@@ -32,7 +32,7 @@ type DealEventPayload = {
 };
 
 type AnalyticsEventPayload = {
-  action: "deal_view" | "click_view_detail" | "click_external_link" | "search_query";
+  action: "click_view_detail" | "click_external_link" | "search_query";
   userId: string;
   dealId: string | null;
   queryText: string | null;

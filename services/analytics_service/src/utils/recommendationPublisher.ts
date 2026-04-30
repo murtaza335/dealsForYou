@@ -1,6 +1,6 @@
 import amqp, { type Channel, type ChannelModel } from "amqplib";
 
-type RecommendationAction = "deal_view" | "click_view_detail" | "click_external_link" | "search_query";
+type RecommendationAction = "click_view_detail" | "click_external_link" | "search_query";
 
 export type RecommendationEventPayload = {
   action: RecommendationAction;

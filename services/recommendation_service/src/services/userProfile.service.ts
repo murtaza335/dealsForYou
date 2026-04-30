@@ -10,8 +10,8 @@ function decayWeight(occurredAt: Date): number {
 }
 
 function actionWeight(action: string): number {
-  if (action === "click_view_detail" || action === "click_external_link") return 0.55;
-  if (action === "deal_view") return 0.3;
+  if (action === "click_external_link") return 0.55;
+  if (action === "click_view_detail") return 0.3;
   if (action === "search_query") return 0.15;
   return 0.05;
 }
@@ -63,8 +63,8 @@ export async function rebuildUserProfile(userId: string) {
       vector = searchVectorMap.get(String(event._id));
       searches += 1;
     } else {
-      if (event.action === "deal_view") views += 1;
-      if (event.action === "click_view_detail" || event.action === "click_external_link") clicks += 1;
+      if (event.action === "click_view_detail") views += 1;
+      if (event.action === "click_external_link") clicks += 1;
       vector = event.dealId ? embeddingMap.get(event.dealId) : undefined;
     }
 

@@ -132,17 +132,6 @@ router.post("/seed-clicks/:userId", async (req, res) => {
         },
         occurredAt: new Date(),
       },
-      {
-        userId,
-        dealId: "sample-deal-burger-combo",
-        action: "deal_view",
-        metadata: {
-          source: "debug_button",
-          sessionId: `debug-${userId}`,
-          dwellTime: 8000,
-        },
-        occurredAt: new Date(),
-      },
     ];
 
     await UserEventModel.insertMany(events);

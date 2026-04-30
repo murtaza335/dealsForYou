@@ -6,10 +6,8 @@ import { publishRecommendationEvent } from "../utils/recommendationPublisher.js"
 
 function toRecommendationAction(
   eventType: EventType
-): "deal_view" | "click_view_detail" | "click_external_link" | "search_query" | null {
+): "click_view_detail" | "click_external_link" | "search_query" | null {
   switch (eventType) {
-    case EventType.DEAL_VIEW:
-      return "deal_view";
     case EventType.CLICK_VIEW_DETAIL:
       return "click_view_detail";
     case EventType.EXTERNAL_LINK:
@@ -28,11 +26,9 @@ export class AnalyticsService {
     let scoreDelta = 0;
 
     switch (data.eventType) {
-      case EventType.DEAL_VIEW:
-        scoreDelta = 1;
-        break;
+      
       case EventType.CLICK_VIEW_DETAIL:
-        scoreDelta = 1.5;
+        scoreDelta = 1;
         break;
       case EventType.EXTERNAL_LINK:
         scoreDelta = 2;
@@ -50,7 +46,7 @@ export class AnalyticsService {
     // if (data.dealId) {
     //   await this.updateDealMetrics(data);
     // }
-    
+
     const action = toRecommendationAction(data.eventType);
     if (action) {
       console.log(`Publishing recommendation event for action: ${action}, userId: ${data.userId}, dealId: ${data.dealId}`);
@@ -100,7 +96,7 @@ export class AnalyticsService {
       },
     };
 
-    if (data.eventType === EventType.DEAL_VIEW) {
+    if (data.eventType === EventType.CLICK_VIEW_DETAIL) {
       update.$inc.viewCount = 1;
     }
 
