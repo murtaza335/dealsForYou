@@ -85,3 +85,22 @@ export const mapKababjeesDeals = (
     publishedAt: new Date()
   }));
 };
+
+// 14th street mapper
+export const mapFourteenthStreetDeals = (
+  rawDeals: any[],
+  brandSlug: string
+): Deal[] => {
+  return rawDeals.map((deal) => ({
+    externalId: Number(deal.id),
+    title: deal.name,
+    description: deal.description || "",
+    price: Number(deal.price || 0),
+    salePrice: Number(deal.salePrice ?? 0),
+    imgUrl: deal.imgUrl ?? "",
+    category: deal.category || "14th Street Deals",
+    brandSlug, // "14street"
+    isActive: true,
+    publishedAt: new Date()
+  }));
+};
