@@ -1,5 +1,9 @@
+ "use client";
+
 import { formatPrice, type Deal } from "@/lib/deals";
 import { recommendationBaseUrl } from "@/lib/deals";
+import { withBearerToken } from "@/lib/deals";
+import { useAuth } from "@clerk/nextjs";
 
 type DealCardProps = {
   deal: Deal;
@@ -8,6 +12,7 @@ type DealCardProps = {
 
 
 export function DealCard({ deal }: DealCardProps) {
+  const { getToken } = useAuth();
 
   
   const handleDealClick = async (dealId: number) => {
@@ -16,11 +21,12 @@ export function DealCard({ deal }: DealCardProps) {
     }
 
     try {
+      const token = await getToken();
       await fetch(`${recommendationBaseUrl}/api/track/track_click`, {
         method: "POST",
-        headers: {
+        headers: withBearerToken(token, {
           "Content-Type": "application/json",
-        },
+        }),
         body: JSON.stringify({
           dealId,
         }),

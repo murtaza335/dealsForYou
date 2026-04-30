@@ -12,8 +12,10 @@ import {
   getTopDeals,
   getBrands,
 } from "../controllers/dealsController";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
+router.use(requireAuth);
 
 router.get("/filtered", getFilteredDeals);
 router.get("/filters/options", getDealFilterOptions);
