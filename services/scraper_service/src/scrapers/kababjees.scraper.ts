@@ -136,7 +136,7 @@ export class KababjeesScraper extends BaseScraper {
             id: item?.item_id,
             name: itemName,
             description: item?.item_description || "",
-            price: priceObj?.price || 0,
+            price: priceObj?.inclusive_tax_price || 0,
             salePrice: priceObj?.discounted_price || 0,
             imgUrl: item?.photo || item?.item_photo_webp || "",
             category: categoryTitle || "Kababjees Deals"
