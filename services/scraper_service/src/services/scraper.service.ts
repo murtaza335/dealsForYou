@@ -9,6 +9,7 @@ import { ScraperStateRepository } from "../repositories/scraperState.repository.
 import { WrapLabScraper } from "../scrapers/wraplab.scraper.js";
 import {HowdyScraper} from "../scrapers/howdy.scraper.js";
 import { KababjeesScraper } from "../scrapers/kababjees.scraper.js";
+import { FourteenthStreetScraper } from "../scrapers/14thstreet.scraper.js";
 
 export class ScraperService {
 
@@ -24,7 +25,8 @@ export class ScraperService {
     kfc: new KfcScraper(),
     wraplab: new WrapLabScraper(),
     howdy: new HowdyScraper(),
-    kababjees : new KababjeesScraper()
+    kababjees : new KababjeesScraper(),
+    fourteenthstreet: new FourteenthStreetScraper()
 
   };
 
