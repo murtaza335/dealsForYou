@@ -31,7 +31,7 @@ export const createBrand = async (req: Request, res: Response, next: NextFunctio
     const body = req.body ?? {};
     const scrapeRequested = Boolean(body.scrapeRequested);
 
-    if (!body.name || !body.logoUrl || !body.contactEmail || !body.contactPhone || !body.country || !body.description) {
+    if (!body.name || !body.contactEmail || !body.contactPhone || !body.country || !body.description) {
       return res.status(400).json({ success: false, message: "Missing required brand fields." });
     }
 
@@ -48,7 +48,7 @@ export const createBrand = async (req: Request, res: Response, next: NextFunctio
       name: String(body.name),
       tagline: body.tagline ? String(body.tagline) : undefined,
       description: String(body.description),
-      logoUrl: String(body.logoUrl),
+      logoUrl: body.logoUrl ? String(body.logoUrl) : undefined,
       website: body.website ? String(body.website) : undefined,
       contactEmail: String(body.contactEmail),
       contactPhone: String(body.contactPhone),
@@ -77,10 +77,39 @@ export const getBrandByPublicId = async (req: Request, res: Response, next: Next
   }
 };
 
+export const listBrands = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const brands = await brandAdminService.listBrands();
+    return res.status(200).json({ success: true, data: brands });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const listPendingBrands = async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const brands = await brandAdminService.listPendingBrands();
     return res.status(200).json({ success: true, data: brands });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const suspendBrand = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const brand = await brandAdminService.suspendBrand(String(req.params.brandId));
+    if (!brand) return res.status(404).json({ success: false, message: "Brand not found." });
+    return res.status(200).json({ success: true, data: brand });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteBrand = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const brand = await brandAdminService.deleteBrand(String(req.params.brandId));
+    if (!brand) return res.status(404).json({ success: false, message: "Brand not found." });
+    return res.status(200).json({ success: true, data: brand });
   } catch (error) {
     next(error);
   }

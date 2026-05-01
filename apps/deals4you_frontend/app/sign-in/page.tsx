@@ -34,7 +34,7 @@ export default function Page() {
           return;
         }
 
-        const response = await fetch(`${apiBaseUrl}/api/users/onboard/consumer`, {
+        const response = await fetch(`${apiBaseUrl}/api/users/upsert-from-clerk`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -42,7 +42,12 @@ export default function Page() {
             email,
             firstName,
             lastName,
-            foodPreferences: [],
+            role: "END_USER",
+            tenantId: null,
+            brandId: null,
+            metadata: {
+              source: "clerk",
+            },
           }),
         }).catch(() => null);
 
@@ -50,7 +55,7 @@ export default function Page() {
           domainUser = await fetchDomainUser(token).catch(() => null);
         } else if (response) {
           const payload = await readJsonResponse<{ message?: string; error?: string }>(response);
-          console.warn("Consumer profile auto-onboarding failed:", payload?.message ?? payload?.error ?? response.statusText);
+          console.warn("Consumer profile auto-upsert failed:", payload?.message ?? payload?.error ?? response.statusText);
         }
       }
 

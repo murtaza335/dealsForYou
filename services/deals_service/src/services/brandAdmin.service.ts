@@ -6,7 +6,7 @@ type BrandInput = {
   name: string;
   tagline?: string;
   description: string;
-  logoUrl: string;
+  logoUrl?: string;
   website?: string;
   contactEmail: string;
   contactPhone: string;
@@ -58,13 +58,14 @@ export class BrandAdminService {
     }
 
     const scrapeRequested = Boolean(input.scrapeRequested);
+    const logoUrl = input.logoUrl?.trim() || "";
 
     return BrandModel.create({
       name: input.name.trim(),
       slug,
       baseUrl: input.website?.trim() || "manual",
-      logoUrl: input.logoUrl,
-      imgUrl: input.logoUrl,
+      logoUrl,
+      imgUrl: logoUrl,
       website: input.website?.trim() || undefined,
       tagline: input.tagline?.trim() || undefined,
       description: input.description.trim(),
@@ -88,8 +89,43 @@ export class BrandAdminService {
     return BrandModel.findOne({ brandId });
   }
 
+  async listBrands(): Promise<BrandDocument[]> {
+    return BrandModel.find({}).sort({ createdAt: -1 });
+  }
+
   async listPendingBrands(): Promise<BrandDocument[]> {
     return BrandModel.find({ approvalStatus: "PENDING" }).sort({ createdAt: -1 });
+  }
+
+  async suspendBrand(brandId: string): Promise<BrandDocument | null> {
+    const brand = await BrandModel.findOneAndUpdate(
+      { brandId },
+      {
+        $set: {
+          isActive: false,
+          scraperStatus: "DISABLED",
+        },
+      },
+      { returnDocument: "after", runValidators: true }
+    );
+
+    if (!brand) return null;
+
+    await DealModel.updateMany(
+      { brandId: brand._id },
+      { $set: { isActive: false, isHot: false } }
+    );
+
+    return brand;
+  }
+
+  async deleteBrand(brandId: string): Promise<BrandDocument | null> {
+    const brand = await BrandModel.findOneAndDelete({ brandId });
+
+    if (!brand) return null;
+
+    await DealModel.deleteMany({ brandId: brand._id });
+    return brand;
   }
 
   async updateApproval(

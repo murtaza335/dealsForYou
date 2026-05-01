@@ -35,7 +35,7 @@ export const onboardBrandAdminSchema = z.object({
     name: z.string().min(1),
     tagline: z.string().optional(),
     description: z.string().min(1),
-    logoUrl: z.string().url(),
+    logoUrl: z.string().url().optional().or(z.literal("")),
     website: z.string().url().optional().or(z.literal("")),
     contactEmail: z.string().email(),
     contactPhone: z.string().min(1),

@@ -11,6 +11,7 @@ import { UserService } from "../services/user.service.js";
 import { getDb } from "../config/db.js";
 import { env } from "../config/env.js";
 import { logger } from "../utils/logger.js";
+import { roleValues, type UserRole } from "../types/role.type.js";
 
 const getService = (): UserService => {
   const db = getDb();
@@ -149,6 +150,57 @@ export const listUsers: RequestHandler = async (_req, res, next) => {
     return res.status(200).json({
       success: true,
       data: users,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const listAdminUsers: RequestHandler = async (req, res, next) => {
+  try {
+    const role = typeof req.query.role === "string" ? req.query.role : undefined;
+    const service = getService();
+    const users = role && roleValues.includes(role as UserRole)
+      ? await service.listUsersByRole(role as UserRole)
+      : await service.listAllUsers();
+
+    return res.status(200).json({
+      success: true,
+      data: users,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const suspendAdminUser: RequestHandler = async (req, res, next) => {
+  try {
+    const userId = String(req.params.userId ?? "").trim();
+    if (!userId) throw new AppError("User ID is required", 400);
+
+    const service = getService();
+    const user = await service.updateUserStatus(userId, false);
+
+    return res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteAdminUser: RequestHandler = async (req, res, next) => {
+  try {
+    const userId = String(req.params.userId ?? "").trim();
+    if (!userId) throw new AppError("User ID is required", 400);
+
+    const service = getService();
+    const user = await service.deleteUser(userId);
+
+    return res.status(200).json({
+      success: true,
+      data: user,
     });
   } catch (error) {
     next(error);

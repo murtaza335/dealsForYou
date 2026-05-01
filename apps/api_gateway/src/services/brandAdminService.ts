@@ -19,6 +19,11 @@ class BrandAdminService {
     return payload.data ?? null;
   }
 
+  async listBrands() {
+    const payload = await this.fetchFromDeals("/api/brands");
+    return payload.data ?? [];
+  }
+
   async listDeals(brandId: string) {
     const payload = await this.fetchFromDeals(`/api/brands/${encodeURIComponent(brandId)}/deals`);
     return payload.data ?? [];
@@ -58,6 +63,20 @@ class BrandAdminService {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reason }),
+    });
+    return payload.data;
+  }
+
+  async suspendBrand(brandId: string) {
+    const payload = await this.fetchFromDeals(`/api/brands/${encodeURIComponent(brandId)}/suspend`, {
+      method: "PATCH",
+    });
+    return payload.data;
+  }
+
+  async deleteBrand(brandId: string) {
+    const payload = await this.fetchFromDeals(`/api/brands/${encodeURIComponent(brandId)}`, {
+      method: "DELETE",
     });
     return payload.data;
   }

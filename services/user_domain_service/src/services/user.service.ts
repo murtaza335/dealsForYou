@@ -2,6 +2,7 @@ import { AppError } from "../error.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import type { UpdateMyProfilePayload, UpsertUserPayload, UserEntity, UpdateUserRolePayload } from "../types/user.type.js";
 import { USER_ROLES } from "../types/role.type.js";
+import type { UserRole } from "../types/role.type.js";
 import { env } from "../config/env.js";
 
 type ConsumerOnboardingPayload = {
@@ -38,6 +39,10 @@ export class UserService {
 
   listAllUsers(): Promise<UserEntity[]> {
     return this.userRepository.listAll();
+  }
+
+  listUsersByRole(role: UserRole): Promise<UserEntity[]> {
+    return this.userRepository.listByRole(role);
   }
 
   upsertUser(payload: UpsertUserPayload): Promise<UserEntity> {
@@ -103,6 +108,22 @@ export class UserService {
 
   async updateUserRole(userId: string, payload: UpdateUserRolePayload): Promise<UserEntity> {
     const user = await this.userRepository.updateUserRole(userId, payload);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    return user;
+  }
+
+  async updateUserStatus(userId: string, isActive: boolean): Promise<UserEntity> {
+    const user = await this.userRepository.updateUserStatus(userId, isActive);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    return user;
+  }
+
+  async deleteUser(userId: string): Promise<UserEntity> {
+    const user = await this.userRepository.deleteUser(userId);
     if (!user) {
       throw new AppError("User not found", 404);
     }

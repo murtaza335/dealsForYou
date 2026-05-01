@@ -1,9 +1,11 @@
 import type { RequestHandler } from "express";
+import { getAuth } from "@clerk/express";
 import { userDomainService } from "../services/userDomainService.js";
 
 export const getMe: RequestHandler = async (req, res, next) => {
   try {
-    const data = await userDomainService.fetchMe(req.headers.authorization);
+    const auth = getAuth(req);
+    const data = await userDomainService.fetchMe(req.headers.authorization, auth.userId ?? undefined);
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);
@@ -23,6 +25,15 @@ export const onboardBrandAdmin: RequestHandler = async (req, res, next) => {
   try {
     const payload = await userDomainService.onboardBrandAdmin(req.body);
     res.status(201).json(payload);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const upsertFromClerk: RequestHandler = async (req, res, next) => {
+  try {
+    const payload = await userDomainService.upsertFromClerk(req.body);
+    res.status(200).json(payload);
   } catch (error) {
     next(error);
   }

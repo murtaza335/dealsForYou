@@ -86,6 +86,7 @@ export async function readJsonResponse<T = unknown>(response: Response): Promise
 
 export const getRoleHomePath = (user: DomainUser | null) => {
   if (!user) return "/sign-up";
+  if (!user.isActive) return "/account-suspended";
   if (user.role === "APP_ADMIN") return "/app-admin/approvals";
   if (user.role === "BRAND_ADMIN") {
     return user.brand?.approvalStatus === "APPROVED" ? "/brand-admin" : "/brand-admin/pending";

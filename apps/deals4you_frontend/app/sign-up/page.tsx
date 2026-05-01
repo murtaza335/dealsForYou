@@ -117,7 +117,7 @@ export default function Page() {
         return;
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/users/onboard/consumer`, {
+      const response = await fetch(`${apiBaseUrl}/api/users/upsert-from-clerk`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -125,10 +125,16 @@ export default function Page() {
           email: draft.email.trim(),
           firstName: draft.firstName.trim(),
           lastName: draft.lastName.trim(),
-          phone: draft.phone.trim() || undefined,
-          city: draft.city.trim() || undefined,
-          area: draft.area.trim() || undefined,
-          foodPreferences: draft.foodPreferences.split(",").map((item) => item.trim()).filter(Boolean),
+          role: "END_USER",
+          tenantId: null,
+          brandId: null,
+          metadata: {
+            source: "clerk",
+            phone: draft.phone.trim() || null,
+            city: draft.city.trim() || null,
+            area: draft.area.trim() || null,
+            foodPreferences: draft.foodPreferences.split(",").map((item) => item.trim()).filter(Boolean),
+          },
         }),
       });
       const payload = await readJsonResponse<{ message?: string; error?: string }>(response);

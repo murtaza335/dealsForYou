@@ -3,21 +3,29 @@
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { fetchDomainUser, type DomainUser } from "@/lib/deals";
 import { DealsLogo } from "@/components/deals-logo";
 import { FoodBackground } from "@/components/food-background";
 
 export default function PendingBrandPage() {
   const { getToken } = useAuth();
+  const router = useRouter();
   const [user, setUser] = useState<DomainUser | null>(null);
 
   useEffect(() => {
     const load = async () => {
       const token = await getToken();
-      setUser(await fetchDomainUser(token));
+      const domainUser = await fetchDomainUser(token);
+      if (domainUser && !domainUser.isActive) {
+        router.replace("/account-suspended");
+        return;
+      }
+
+      setUser(domainUser);
     };
     void load();
-  }, [getToken]);
+  }, [getToken, router]);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#151515] px-4 py-8 text-white">

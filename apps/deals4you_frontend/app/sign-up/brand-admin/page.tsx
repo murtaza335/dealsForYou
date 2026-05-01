@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useSignUp } from "@clerk/nextjs";
+import { useClerk, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { apiBaseUrl, uploadImage } from "@/lib/deals";
+import { apiBaseUrl, readJsonResponse, uploadImage } from "@/lib/deals";
 import { DealsLogo } from "@/components/deals-logo";
 import { FoodBackground } from "@/components/food-background";
 
@@ -57,99 +57,171 @@ const initialDraft: Draft = {
 const list = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
 const inputClass = "rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500";
 const labelClass = "grid gap-2 text-sm font-semibold text-slate-200";
+type MessageTone = "error" | "success";
 
 export default function BrandAdminSignUpPage() {
-  const { signUp, errors, fetchStatus } = useSignUp();
+  const clerk = useClerk();
+  const { user } = useUser();
   const router = useRouter();
   const [draft, setDraft] = useState(initialDraft);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploadedLogoUrl, setUploadedLogoUrl] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageTone, setMessageTone] = useState<MessageTone>("error");
+  const [showVerification, setShowVerification] = useState(false);
+  const [isWorking, setIsWorking] = useState(false);
 
   const update = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((current) => ({ ...current, [key]: value }));
+  const showError = (value: string) => {
+    setMessageTone("error");
+    setMessage(value);
+  };
+  const showSuccess = (value: string) => {
+    setMessageTone("success");
+    setMessage(value);
+  };
+  const errorMessage = (error: unknown, fallback: string) => {
+    if (error instanceof Error) return error.message;
+    if (typeof error === "object" && error !== null) {
+      const payload = error as {
+        errors?: Array<{ longMessage?: string; message?: string }>;
+        longMessage?: string;
+        message?: string;
+      };
+      return payload.errors?.[0]?.longMessage ?? payload.errors?.[0]?.message ?? payload.longMessage ?? payload.message ?? fallback;
+    }
+    return fallback;
+  };
 
   const validate = () => {
-    if (!logoFile) return "Brand logo is required.";
     if (draft.scrapeRequested && !draft.website.trim()) return "Website URL is required when scraper setup is requested.";
-    if (!draft.firstName || !draft.lastName || !draft.email || !draft.password || !draft.phone || !draft.title) return "Complete all admin fields.";
-    if (!draft.brandName || !draft.description || !draft.contactEmail || !draft.contactPhone || !draft.country || list(draft.cities).length === 0) return "Complete all required brand fields.";
+    if (!draft.firstName.trim() || !draft.lastName.trim() || !draft.email.trim() || !draft.password.trim() || !draft.phone.trim() || !draft.title.trim()) return "Complete all admin fields.";
+    if (!draft.brandName.trim() || !draft.description.trim() || !draft.contactEmail.trim() || !draft.contactPhone.trim() || !draft.country.trim() || list(draft.cities).length === 0) return "Complete all required brand fields.";
     return null;
   };
 
-  const createAccount = async () => {
-    setMessage(null);
-    const validation = validate();
-    if (validation) {
-      setMessage(validation);
-      return;
-    }
-
-    const logoUrl = await uploadImage(logoFile!, "deals4you/brand-logos");
-    setUploadedLogoUrl(logoUrl);
-
-    const { error } = await signUp.password({ emailAddress: draft.email, password: draft.password });
-    if (error) return;
-    await signUp.update({ firstName: draft.firstName, lastName: draft.lastName });
-    await signUp.verifications.sendEmailCode();
-  };
-
-  const verify = async (formData: FormData) => {
-    setMessage(null);
-    const code = formData.get("code") as string;
-    await signUp.verifications.verifyEmailCode({ code });
-
-    if (signUp.status !== "complete" || !uploadedLogoUrl) {
-      setMessage("Verification is not complete yet.");
-      return;
+  const submitBrandOnboarding = async (clerkUserId: string) => {
+    let logoUrl = uploadedLogoUrl;
+    if (!logoUrl && logoFile) {
+      logoUrl = await uploadImage(logoFile, "deals4you/brand-logos");
+      setUploadedLogoUrl(logoUrl);
     }
 
     const response = await fetch(`${apiBaseUrl}/api/users/onboard/brand-admin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        clerkUserId: signUp.createdUserId,
-        email: draft.email,
-        firstName: draft.firstName,
-        lastName: draft.lastName,
-        phone: draft.phone,
-        title: draft.title,
+        clerkUserId,
+        email: draft.email.trim(),
+        firstName: draft.firstName.trim(),
+        lastName: draft.lastName.trim(),
+        phone: draft.phone.trim(),
+        title: draft.title.trim(),
         brand: {
-          name: draft.brandName,
-          tagline: draft.tagline || undefined,
-          description: draft.description,
-          logoUrl: uploadedLogoUrl,
-          website: draft.website || undefined,
-          contactEmail: draft.contactEmail,
-          contactPhone: draft.contactPhone,
-          country: draft.country,
+          name: draft.brandName.trim(),
+          tagline: draft.tagline.trim() || undefined,
+          description: draft.description.trim(),
+          logoUrl: logoUrl || undefined,
+          website: draft.website.trim() || undefined,
+          contactEmail: draft.contactEmail.trim(),
+          contactPhone: draft.contactPhone.trim(),
+          country: draft.country.trim(),
           cities: list(draft.cities),
           areas: list(draft.areas),
           cuisineTags: list(draft.cuisineTags),
           socials: {
-            instagram: draft.instagram,
-            facebook: draft.facebook,
+            instagram: draft.instagram.trim(),
+            facebook: draft.facebook.trim(),
           },
-          notes: draft.notes || undefined,
+          notes: draft.notes.trim() || undefined,
           scrapeRequested: draft.scrapeRequested,
         },
       }),
     });
 
+    const payload = await readJsonResponse<{ message?: string; error?: string }>(response);
     if (!response.ok) {
-      const payload = await response.json().catch(() => ({}));
-      setMessage(payload?.message ?? "Brand onboarding failed.");
+      throw new Error(payload?.message ?? payload?.error ?? "Brand onboarding failed.");
+    }
+  };
+
+  const createAccount = async () => {
+    setMessage(null);
+    const validation = validate();
+    if (validation) {
+      showError(validation);
       return;
     }
 
-    await signUp.finalize({
-      navigate: () => router.push("/brand-admin/pending"),
-    });
+    setIsWorking(true);
+    try {
+      const signUpAttempt = await clerk.client.signUp.create({
+        emailAddress: draft.email.trim(),
+        password: draft.password,
+        firstName: draft.firstName.trim(),
+        lastName: draft.lastName.trim(),
+      });
+
+      await signUpAttempt.prepareEmailAddressVerification({
+        strategy: "email_code",
+      });
+
+      setShowVerification(true);
+      showSuccess(`Verification code sent to ${draft.email.trim()}. Enter it below to submit your brand for review.`);
+    } catch (error) {
+      showError(`Could not send verification code: ${errorMessage(error, "Clerk signup failed.")}`);
+    } finally {
+      setIsWorking(false);
+    }
   };
 
-  const needsCode =
-    signUp.status === "missing_requirements" &&
-    signUp.unverifiedFields.includes("email_address") &&
-    signUp.missingFields.length === 0;
+  const verify = async (formData: FormData) => {
+    setMessage(null);
+    const code = String(formData.get("code") ?? "").trim();
+    if (!code) {
+      showError("Enter the verification code from your email.");
+      return;
+    }
+
+    setIsWorking(true);
+    try {
+      const completeSignUp = await clerk.client.signUp.attemptEmailAddressVerification({ code });
+
+      if (completeSignUp.status !== "complete" || !completeSignUp.createdUserId || !completeSignUp.createdSessionId) {
+        showError("Verification is not complete yet. Check the code and try again.");
+        return;
+      }
+
+      await submitBrandOnboarding(completeSignUp.createdUserId);
+
+      showSuccess("Brand submitted for review. Redirecting...");
+      await clerk.setActive({ session: completeSignUp.createdSessionId });
+      router.push("/brand-admin/pending");
+    } catch (error) {
+      const message = errorMessage(error, "Could not submit brand for review.");
+      if (message.toLowerCase().includes("already signed in") && user?.id) {
+        try {
+          await submitBrandOnboarding(user.id);
+          showSuccess("Brand submitted for review. Redirecting...");
+          router.push("/brand-admin/pending");
+          return;
+        } catch (recoveryError) {
+          showError(errorMessage(recoveryError, "Could not submit brand for review."));
+          return;
+        }
+      }
+
+      showError(message);
+    } finally {
+      setIsWorking(false);
+    }
+  };
+
+  const needsCode = showVerification;
+  const messageClass =
+    messageTone === "success"
+      ? "mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200"
+      : "mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200";
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#151515] px-4 py-8 text-white">
@@ -168,9 +240,10 @@ export default function BrandAdminSignUpPage() {
                 <span><span className="text-red-400">*</span> Verification code</span>
                 <input name="code" required className={inputClass} />
               </label>
-              {errors.fields.code ? <p className="text-sm text-red-300">{errors.fields.code.message}</p> : null}
-              {message ? <p className="text-sm text-red-300">{message}</p> : null}
-              <button className="rounded-full bg-red-600 px-5 py-3 text-sm font-bold transition hover:bg-red-500">Verify and submit brand</button>
+              {message ? <p className={messageClass}>{message}</p> : null}
+              <button disabled={isWorking} className="rounded-full bg-red-600 px-5 py-3 text-sm font-bold transition hover:bg-red-500 disabled:opacity-60">
+                {isWorking ? "Verifying..." : "Verify and submit brand"}
+              </button>
             </form>
           ) : (
             <>
@@ -244,8 +317,8 @@ export default function BrandAdminSignUpPage() {
                   <input value={draft.facebook} onChange={(e) => update("facebook", e.target.value)} className={inputClass} />
                 </label>
                 <label className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 text-sm font-semibold text-slate-200">
-                  <span><span className="text-red-400">*</span> Brand logo</span>
-                  <input type="file" accept="image/*" required onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm" />
+                  <span>Brand logo (optional)</span>
+                  <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm" />
                 </label>
                 <label className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 text-sm font-semibold">
                   Request website scraper
@@ -264,9 +337,9 @@ export default function BrandAdminSignUpPage() {
                   <textarea value={draft.notes} onChange={(e) => update("notes", e.target.value)} className={`${inputClass} min-h-24`} />
                 </label>
               </div>
-              {message ? <p className="mt-4 text-sm text-red-300">{message}</p> : null}
-              <button type="button" onClick={() => void createAccount()} disabled={fetchStatus === "fetching"} className="mt-6 w-full rounded-full bg-red-600 px-5 py-3 text-sm font-bold transition hover:bg-red-500 disabled:opacity-60">
-                {fetchStatus === "fetching" ? "Creating..." : "Create brand admin account"}
+              {message ? <p className={messageClass}>{message}</p> : null}
+              <button type="button" onClick={() => void createAccount()} disabled={isWorking} className="mt-6 w-full rounded-full bg-red-600 px-5 py-3 text-sm font-bold transition hover:bg-red-500 disabled:opacity-60">
+                {isWorking ? "Creating..." : "Create brand admin account"}
               </button>
             </>
           )}
