@@ -240,7 +240,6 @@ export const getDealsByIds = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-console.log("in controller");
 export const getFilterOptions = async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const options = await dealsService.getFilterOptions();
@@ -249,20 +248,6 @@ export const getFilterOptions = async (_req: Request, res: Response, next: NextF
       success: true,
       message: "Filter options fetched successfully.",
       data: options,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getFilterBrands = async (_req: Request, res: Response, next: NextFunction) => {
-  try {
-    const brands = await dealsService.getFilterBrands();
-
-    return res.status(200).json({
-      success: true,
-      message: "Filter brands fetched successfully.",
-      data: brands,
     });
   } catch (error) {
     next(error);

@@ -29,10 +29,6 @@ class DealsService {
     return this.dealRepository.getFilterOptions();
   }
 
-  async getFilterBrands(): Promise<Array<{ name: string; slug: string }>> {
-    return this.dealRepository.getFilterBrands();
-  }
-
   async getFilterCuisineTags(): Promise<string[]> {
     return this.dealRepository.getFilterCuisineTags();
   }
