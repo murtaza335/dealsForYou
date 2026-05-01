@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import { LogModel } from "../models/logs.js";
 import { LogDocument } from "../models/logs.js";
 import { DealDocument } from "../models/deal.model.js";
-import { brandRepository } from "./brand.repository.js";
+import { BrandDocument, BrandModel } from "../models/brands.model.js";
 import { v4 as uuidv4 } from "uuid";
 import { publishDealCreated } from "../services/rabbitmq.publisher.js";
 import { metadataEnrichmentService } from "../services/metadata.enrichment.service.js";
@@ -120,7 +120,6 @@ export interface BrandDealUpsertInput {
 
 export class DealRepository {
 
-
   private escapeRegex(text: string): string {
     return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
@@ -216,7 +215,34 @@ export class DealRepository {
   // 5. incrementDealViews(dealId) - this will increment the views count for a given deal id by 1
   // 6. markHotDeals() - this will be a function that will be called by a background job to mark the hot deals based on the views count and the discount percent or any other criteria we want to use to determine if a deal is hot or not.
 
+  async updateOrInsertBrand(
+    brandInfo: { name: string; slug: string; baseUrl: string , brandLogoUrl?: string }
+  ): Promise<BrandDocument> {
 
+    const brand = await BrandModel.findOneAndUpdate(
+      { slug: brandInfo.slug },
+      {
+        $set: {
+          ...brandInfo
+        },
+        $setOnInsert: {
+          publishedAt: new Date()
+        }
+      },
+      {
+        returnDocument: "after",
+        upsert: true,
+        runValidators: true
+      }
+    );
+
+    if (!brand) {
+      throw new Error("Brand upsert failed");
+    }
+    console.log("Upserted brand:", brand.slug, brand._id);
+
+    return brand;
+  }
 
   async updateBrand(brandIdentifier: string, updates: UpdateBrandInput): Promise<BrandDocument | null> {
     const brand = await this.resolveBrand(brandIdentifier);
@@ -749,10 +775,17 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[], brandInfo: { bra
     }
 
     if (requestedBrands.size > 0) {
+      const requestedBrandsRegex = [...requestedBrands].map((brand) => {
+        const escapedBrand = this.escapeRegex(brand);
+        return new RegExp(`^${escapedBrand}$`, "i");
+      });
 
-      const matchingBrands = await brandRepository.getBrandsByNamesOrSlugs(
-      [...requestedBrands]
-        );
+      const matchingBrands = await BrandModel.find({
+        $or: [
+          { slug: { $in: requestedBrandsRegex } },
+          { name: { $in: requestedBrandsRegex } }
+        ]
+      }).select("_id");
 
       if (matchingBrands.length === 0) {
         const page = Math.max(1, filters.page ?? 1);
@@ -912,6 +945,18 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[], brandInfo: { bra
     };
   }
 
+  async getFilterBrands(): Promise<Array<{ name: string; slug: string }>> {
+    const brands = await BrandModel.find({ isActive: true })
+      .select({ _id: 0, name: 1, slug: 1 })
+      .sort({ name: 1 })
+      .lean();
+
+    return brands.map((brand: { name: string; slug: string }) => ({
+      name: brand.name,
+      slug: brand.slug,
+    }));
+  }
+
   async getFilterCuisineTags(): Promise<string[]> {
     const tags = await DealModel.distinct("cuisineTags", { isActive: true });
     return this.toSortedUniqueStrings(tags);
@@ -944,7 +989,7 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[], brandInfo: { bra
 
   async getFilterOptions(): Promise<DealFilterOptions> {
     const [brands, cuisineTags, mealTypes, currencies, priceRange, discountStats, personsStats] = await Promise.all([
-      brandRepository.getActiveBrands(),
+      this.getFilterBrands(),
       this.getFilterCuisineTags(),
       this.getFilterMealTypes(),
       DealModel.distinct("currency", { isActive: true }),

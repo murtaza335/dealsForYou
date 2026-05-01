@@ -27,7 +27,7 @@ const EventSchema = new Schema<IEvent>({
   brandSlug: { type: String },
   source: { type: String },
 
-  sessionId: { type: String},
+  sessionId: { type: String, required: true },
 
   dwellTime: { type: Number },
   scoreDelta: { type: Number },
