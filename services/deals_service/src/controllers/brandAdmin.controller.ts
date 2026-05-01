@@ -12,6 +12,20 @@ const parseNumber = (value: unknown): number | undefined => {
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
+const isScraperDealUpsertPayload = (body: unknown): boolean => {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return false;
+  const payload = body as Record<string, unknown>;
+
+  if (typeof payload.externalId === "string" && payload.externalId.trim()) return true;
+  if (Array.isArray(payload.deals)) return true;
+  if (payload.deal && typeof payload.deal === "object") {
+    const deal = payload.deal as Record<string, unknown>;
+    return typeof deal.externalId === "string" && deal.externalId.trim().length > 0;
+  }
+
+  return false;
+};
+
 export const createBrand = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const body = req.body ?? {};
@@ -104,6 +118,11 @@ export const listBrandDeals = async (req: Request, res: Response, next: NextFunc
 export const createManualDeal = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const body = req.body ?? {};
+
+    if (isScraperDealUpsertPayload(body)) {
+      return next("router");
+    }
+
     const price = parseNumber(body.price);
 
     if (!body.title || typeof price !== "number" || !body.imgUrl) {
@@ -137,9 +156,13 @@ export const createManualDeal = async (req: Request, res: Response, next: NextFu
 export const deleteManualDeal = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const deal = await brandAdminService.deleteManualDeal(String(req.params.brandId), String(req.params.dealId));
-    if (!deal) return res.status(404).json({ success: false, message: "Manual deal not found." });
+    if (!deal) return next("router");
     return res.status(200).json({ success: true, data: deal });
   } catch (error) {
+    if (error instanceof Error && error.message === "Brand not found.") {
+      return next("router");
+    }
+
     next(error);
   }
 };

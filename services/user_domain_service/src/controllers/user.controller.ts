@@ -10,6 +10,7 @@ import { UserRepository } from "../repositories/user.repository.js";
 import { UserService } from "../services/user.service.js";
 import { getDb } from "../config/db.js";
 import { env } from "../config/env.js";
+import { logger } from "../utils/logger.js";
 
 const getService = (): UserService => {
   const db = getDb();
@@ -20,9 +21,11 @@ const getService = (): UserService => {
   return new UserService(new UserRepository(db));
 };
 
-export const getMe: RequestHandler = async (_req, res, next) => {
+export const getMe: RequestHandler = async (req, res, next) => {
   try {
-    const authUserId = res.locals.authUserId;
+    console.log("getMe req.headers:", req.headers);
+    const authUserId = (req.headers["user-id"] as string | undefined) ?? res.locals.authUserId;
+    console.log("getMe authUserId:", authUserId);
     if (!authUserId) throw new AppError("Unauthorized", 401);
 
     const service = getService();
@@ -96,7 +99,7 @@ export const onboardBrandAdmin: RequestHandler = async (req, res, next) => {
 
 export const updateMe: RequestHandler = async (req, res, next) => {
   try {
-    const authUserId = res.locals.authUserId;
+    const authUserId = (req.headers["user-id"] as string | undefined) ?? res.locals.authUserId;
     if (!authUserId) throw new AppError("Unauthorized", 401);
 
     const payload = updateMyProfileSchema.parse(req.body);
@@ -114,15 +117,26 @@ export const updateMe: RequestHandler = async (req, res, next) => {
 
 export const upsertFromClerk: RequestHandler = async (req, res, next) => {
   try {
+    logger.info("Received upsert-from-clerk request", {
+      clerkUserId: req.body?.clerkUserId,
+      email: req.body?.email,
+    });
+
     const payload = upsertUserSchema.parse(req.body);
     const service = getService();
     const user = await service.upsertUser(payload);
+
+    logger.info("Successfully upserted user from Clerk", {
+      clerkUserId: payload.clerkUserId,
+      email: payload.email,
+    });
 
     return res.status(200).json({
       success: true,
       data: user,
     });
   } catch (error) {
+    logger.error("Failed to upsert user from Clerk", error);
     next(error);
   }
 };

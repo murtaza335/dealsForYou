@@ -12,9 +12,10 @@ import {
 
 export const userRouter = Router();
 
-userRouter.get("/me", requireAuth, getMe);
-userRouter.patch("/me", requireAuth, updateMe);
-userRouter.post("/upsert-from-clerk", requireAuth, upsertFromClerk);
+// The API gateway forwards the Clerk user id in the user-id header for these routes.
+userRouter.get("/me", getMe);
+userRouter.patch("/me", updateMe);
+userRouter.post("/upsert-from-clerk", upsertFromClerk);
 userRouter.post("/onboard/consumer", onboardConsumer);
 userRouter.post("/onboard/brand-admin", onboardBrandAdmin);
 
