@@ -1,5 +1,6 @@
 export interface Deal {
-  id: number;
+  id?: number;
+  dealId: string;
   externalId: string;
   title: string;
   description: string;
@@ -116,3 +117,16 @@ export async function uploadImage(file: File, folder: string): Promise<string> {
 
   return payload.data.url;
 }
+
+export const withBearerToken = (
+  token: string | null,
+  initHeaders?: HeadersInit
+): Headers => {
+  const headers = new Headers(initHeaders);
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  return headers;
+};

@@ -19,6 +19,7 @@ export default function AppAdminApprovalsPage() {
   }, [getToken]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load().catch((error) => setMessage(error instanceof Error ? error.message : "Could not load approvals."));
   }, [load]);
 

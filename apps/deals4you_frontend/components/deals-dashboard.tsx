@@ -8,6 +8,7 @@ import {
   apiBaseUrl,
   buildQuery,
   recommendationBaseUrl,
+  withBearerToken,
   type ApiResponse,
   type Deal,
 } from "@/lib/deals";
@@ -35,7 +36,7 @@ function SectionEmptyState({
 
 export function DealsDashboard() {
   const { user } = useUser();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, getToken } = useAuth();
   const userId = user?.id;
 
   const [brand, setBrand] = useState("");
@@ -60,8 +61,11 @@ export function DealsDashboard() {
         query,
         brand,
       });
+      const token = await getToken();
 
-      const response = await fetch(`${apiBaseUrl}/api/deals/filtered?${queryParam}`);
+      const response = await fetch(`${apiBaseUrl}/api/deals/filtered?${queryParam}`, {
+        headers: withBearerToken(token),
+      });
       if (!response.ok) {
         throw new Error("Could not fetch filtered deals.");
       }
@@ -75,11 +79,14 @@ export function DealsDashboard() {
     } finally {
       setLoadingFiltered(false);
     }
-  }, [brand, minPrice, maxPrice, query]);
+  }, [brand, minPrice, maxPrice, query, getToken]);
 
   const fetchBrands = useCallback(async () => {
     try {
-      const response = await fetch(`${apiBaseUrl}/api/deals/filters/brands`);
+      const token = await getToken();
+      const response = await fetch(`${apiBaseUrl}/api/deals/filters/brands`, {
+        headers: withBearerToken(token),
+      });
       if (!response.ok) {
         throw new Error("Could not fetch brands.");
       }
@@ -89,7 +96,7 @@ export function DealsDashboard() {
     } catch (error) {
       console.error("Error fetching brands:", error);
     }
-  }, []);
+  }, [getToken]);
 
   useEffect(() => {
     if (!isSignedIn) return;
@@ -102,8 +109,9 @@ export function DealsDashboard() {
   }, [isSignedIn, fetchFilteredDeals]);
 
   useEffect(() => {
+    if (!isSignedIn) return;
     void fetchBrands();
-  }, [fetchBrands]);
+  }, [isSignedIn, fetchBrands]);
 
   const onFilterSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

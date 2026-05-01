@@ -156,6 +156,8 @@ export class BrandAdminService {
       imgUrl: input.imgUrl,
       sourceType: "MANUAL",
       manuallyCreatedBy: input.createdBy,
+      baseUrl: brand.baseUrl || brand.website || "manual",
+      brandLogoUrl: brand.logoUrl || brand.imgUrl || "",
     });
   }
 

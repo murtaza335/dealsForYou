@@ -59,6 +59,7 @@ export function BrandAdminDashboard() {
   }, [getToken]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load().catch((error) => {
       setMessage(error instanceof Error ? error.message : "Could not load dashboard.");
       setLoading(false);
@@ -175,7 +176,7 @@ export function BrandAdminDashboard() {
                     <p className="mt-2 font-bold text-yellow-400">{formatPrice(deal.price)}</p>
                   </div>
                   {brand?.manualDealManagementEnabled ? (
-                    <button onClick={() => void deleteDeal((deal as any).dealId)} className="rounded-full border border-red-500/40 px-4 py-2 text-sm font-semibold text-red-200 hover:bg-red-500/10">Delete</button>
+                    <button onClick={() => void deleteDeal(deal.dealId)} className="rounded-full border border-red-500/40 px-4 py-2 text-sm font-semibold text-red-200 hover:bg-red-500/10">Delete</button>
                   ) : null}
                 </article>
               ))}

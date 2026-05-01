@@ -22,6 +22,60 @@ function toRecommendationAction(
 export class AnalyticsService {
   private static readonly TRENDING_LIMIT = 5;
 
+  private static getDealsServiceBaseUrl() {
+    return process.env.DEALS_SERVICE_URL ?? "http://localhost:5002";
+  }
+
+  private static async fetchDealsFromService(trendingMetrics: Array<{ dealId: string; brandSlug: string }>) {
+    if (trendingMetrics.length === 0) {
+      console.log("[Analytics] No trending metrics found");
+      return [];
+    }
+
+    const validMetrics = trendingMetrics
+      .map((metric) => ({
+        dealId: String(metric.dealId).trim(),
+        brandSlug: String(metric.brandSlug).trim(),
+      }))
+      .filter((metric) => metric.dealId.length > 0 && metric.brandSlug.length > 0);
+
+    if (validMetrics.length === 0) {
+      console.log("[Analytics] No valid metrics after filtering");
+      return [];
+    }
+
+    const dealsServiceBaseUrl = this.getDealsServiceBaseUrl();
+    const dealsParam = encodeURIComponent(JSON.stringify(validMetrics));
+    const url = `${dealsServiceBaseUrl.replace(/\/$/, "")}/api/deals/bulk?deals=${dealsParam}`;
+
+    console.log("[Analytics] Trending metrics to fetch:", validMetrics);
+    console.log("[Analytics] Fetching deals from deals service URL:", url);
+
+    try {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        console.error(`[Analytics] Deals service returned status ${response.status}`);
+        throw new Error(`Failed to fetch from deals service (${response.status}).`);
+      }
+
+      const payload = await response.json() as { data?: unknown[] | unknown };
+      console.log("[Analytics] Received response from deals service:", payload);
+
+      const dealsArray = Array.isArray(payload.data) ? payload.data : [];
+      console.log("[Analytics] Fetched deals count:", dealsArray.length);
+
+      if (dealsArray.length === 0) {
+        console.warn("[Analytics] WARNING: Deals service returned 0 deals for metrics:", validMetrics);
+      }
+
+      return dealsArray;
+    } catch (error) {
+      console.error("[Analytics] Error fetching deals from service:", error);
+      return [];
+    }
+  }
+
   static async trackEvent(data: any) {
     let scoreDelta = 0;
 
@@ -127,7 +181,9 @@ export class AnalyticsService {
       .limit(Math.max(safeLimit * 5, 50))
       .lean();
 
-    const deals = candidates
+    console.log("[Analytics] Found trending metric candidates:", candidates.length);
+
+    const trendingMetrics = candidates
       .map((deal) => {
         const currentTrendScore = deal.lastEventAt
           ? deal.decayedScore * getDecayFactor(new Date(deal.lastEventAt))
@@ -158,7 +214,24 @@ export class AnalyticsService {
       })
       .slice(0, safeLimit);
 
-    return deals;
+    console.log("[Analytics] Trending metrics after filtering:", trendingMetrics.length);
+
+    console.log("[Analytics] Trending metrics to fetch:", trendingMetrics);
+
+    const deals = await this.fetchDealsFromService(trendingMetrics);
+
+    const trendMap = new Map(
+   trendingMetrics.map((item) => [String(item.dealId), item.currentTrendScore])
+  );
+
+  // Attach currentTrendScore to each deal
+  const enrichedDeals = deals.map((deal) => ({
+  ...deal,
+  currentTrendScore: trendMap.get(String(deal.externalId)) || 0,
+  }));
+
+   return enrichedDeals;
+
   }
 
   static async getTrendingBrands() {

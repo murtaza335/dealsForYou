@@ -140,7 +140,7 @@ export class DealRepository {
   // 6. markHotDeals() - this will be a function that will be called by a background job to mark the hot deals based on the views count and the discount percent or any other criteria we want to use to determine if a deal is hot or not.
 
   async updateOrInsertBrand(
-    brandInfo: { name: string; slug: string; baseUrl: string }
+    brandInfo: { name: string; slug: string; baseUrl: string , brandLogoUrl?: string }
   ): Promise<BrandDocument> {
 
     const brand = await BrandModel.findOneAndUpdate(
@@ -168,7 +168,7 @@ export class DealRepository {
     return brand;
   }
 
-async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
+async syncDealsForBrand(brandId: string, deals: DealDocument[], brandInfo: { brand: string; slug: string; url: string }): Promise<void> {
   console.log(
     `[DealSync] Started | brandId=${brandId} | incomingDeals=${deals?.length ?? 0}`
   );
@@ -242,7 +242,7 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
           $set: {
             brandId: brandObjectId,
             externalId,
-            brandSlug: raw.brandSlug ?? "unknown-brand",
+            brandSlug: raw.brandSlug ??  "unknown-brand",
             title: raw.title,
             description: raw.description ?? "",
             price: raw.price,
@@ -260,6 +260,7 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
             isActive,
             imgUrl: raw.imgUrl ?? "",
             scrapedAt: now,
+            baseUrl: brandInfo.url ?? "",
           },
         },
         upsert: true,
@@ -462,27 +463,60 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
     return await DealModel.findOne({ dealId: dealId });
   }
 
-  async getDealsByIds(dealIds: string[]): Promise<DealDocument[]> {
-    const uniqueDealIds = [...new Set(dealIds.map((dealId) => dealId.trim()).filter(Boolean))];
+  async getDealsByIds(
+    requestedDeals: string[] | Array<{ dealId: string; brandSlug?: string }>
+  ): Promise<DealDocument[]> {
+    const normalizedDeals = requestedDeals
+      .map((deal) =>
+        typeof deal === "string"
+          ? { dealId: deal.trim(), brandSlug: undefined }
+          : {
+              dealId: String(deal.dealId ?? "").trim(),
+              brandSlug: deal.brandSlug ? String(deal.brandSlug).trim() : undefined,
+            }
+      )
+      .filter((deal) => deal.dealId.length > 0);
 
-    if (!uniqueDealIds.length) {
+    if (!normalizedDeals.length) {
       return [];
     }
 
-    const deals = await DealModel.find({ dealId: { $in: uniqueDealIds } });
-    const dealsById = new Map(deals.map((deal) => [deal.dealId, deal]));
-    const orderedDeals: DealDocument[] = [];
+    const dealIds = [...new Set(normalizedDeals.map((deal) => deal.dealId))];
+    const externalIdConditions = normalizedDeals
+      .filter((deal) => deal.brandSlug)
+      .map((deal) => ({
+        externalId: deal.dealId,
+        brandSlug: deal.brandSlug,
+      }));
 
-    for (const dealId of uniqueDealIds) {
-      const deal = dealsById.get(dealId);
-      if (deal) {
-        orderedDeals.push(deal);
+    const foundDeals = await DealModel.find({
+      $or: [
+        { dealId: { $in: dealIds } },
+        ...externalIdConditions,
+      ],
+    });
+
+    const dealsByDealId = new Map(foundDeals.map((deal) => [deal.dealId, deal]));
+    const dealsByExternalKey = new Map(
+      foundDeals.map((deal) => [`${deal.externalId}:${deal.brandSlug}`, deal])
+    );
+
+    const orderedDeals: DealDocument[] = [];
+    const addedIds = new Set<string>();
+
+    for (const deal of normalizedDeals) {
+      const foundDeal =
+        dealsByDealId.get(deal.dealId) ??
+        (deal.brandSlug ? dealsByExternalKey.get(`${deal.dealId}:${deal.brandSlug}`) : undefined);
+
+      if (foundDeal && !addedIds.has(foundDeal.dealId)) {
+        orderedDeals.push(foundDeal);
+        addedIds.add(foundDeal.dealId);
       }
     }
 
     return orderedDeals;
   }
-
   async getDeals(filters: DealFilters): Promise<DealsListResult> {
     const mongoFilter: Record<string, unknown> = {};
 
@@ -530,7 +564,9 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
         };
       }
 
-      mongoFilter.brandId = { $in: matchingBrands.map((brand) => brand._id) };
+      mongoFilter.brandId = {
+        $in: matchingBrands.map((brand: { _id: mongoose.Types.ObjectId }) => brand._id),
+      };
     }
 
     if (typeof filters.isActive === "boolean") {
@@ -675,7 +711,7 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[]) {
       .sort({ name: 1 })
       .lean();
 
-    return brands.map((brand) => ({
+    return brands.map((brand: { name: string; slug: string }) => ({
       name: brand.name,
       slug: brand.slug,
     }));

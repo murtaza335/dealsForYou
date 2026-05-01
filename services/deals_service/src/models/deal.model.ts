@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 
 //our schema for the deal data that we will be storing in our database
 export interface DealDocument extends Document {
+  _id: Types.ObjectId;
   dealId: string; // UUID string
   brandId: Types.ObjectId; // Reference to Brand
   brandSlug: string; // denormalized for easier querying without needing to populate brand
@@ -19,7 +20,7 @@ export interface DealDocument extends Document {
   mealType?: string[];
   conditions?: string;
   startTime?: Date;
-  endTime: Date;
+  endTime?: Date;
   isExpired: boolean;
   isActive: boolean;
   isHot: boolean;
@@ -32,6 +33,8 @@ export interface DealDocument extends Document {
   sourceType?: "SCRAPER" | "MANUAL";
   manuallyCreatedBy?: string;
   deletedAt?: Date;
+  baseUrl?: string;
+  brandLogoUrl?: string;
 }
 
 const dealSchema = new Schema<DealDocument>(
@@ -56,8 +59,8 @@ const dealSchema = new Schema<DealDocument>(
     cuisineTags: [{ type: String }],
     mealType: [{ type: String }],
     conditions: { type: String },
-    startTime: { type: Date , nullable: true},
-    endTime: { type: Date , nullable: true},
+    startTime: { type: Date },
+    endTime: { type: Date},
     isExpired: {
       type: Boolean,
       default: false,
@@ -76,10 +79,16 @@ const dealSchema = new Schema<DealDocument>(
     sourceType: { type: String, enum: ["SCRAPER", "MANUAL"], default: "SCRAPER", index: true },
     manuallyCreatedBy: { type: String },
     deletedAt: { type: Date },
+    baseUrl: { type: String, default: "" },
+    brandLogoUrl: { type: String, default: "" },
   },
   { timestamps: true }
 );
 
 dealSchema.index({ brandId: 1, externalId: 1 }, { unique: true });
 
-export const DealModel = mongoose.model("Deal", dealSchema, "deals");
+export const DealModel = mongoose.model<DealDocument>(
+  "Deal",
+  dealSchema,
+  "deals"
+);
