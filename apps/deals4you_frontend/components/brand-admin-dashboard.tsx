@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useAuth } from "@clerk/nextjs";
 import { useCallback, useEffect, useState } from "react";
 import { apiBaseUrl, authHeaders, formatPrice, type BrandProfile, type Deal, uploadImage } from "@/lib/deals";
+import { FoodBackground } from "@/components/food-background";
 
 type DealDraft = {
   title: string;
@@ -117,11 +118,19 @@ export function BrandAdminDashboard() {
     await load();
   };
 
-  if (loading) return <main className="min-h-screen bg-[#151515] p-8 text-white">Loading...</main>;
+  if (loading) {
+    return (
+      <main className="relative min-h-screen overflow-hidden bg-[#151515] p-8 text-white">
+        <FoodBackground blocks={4} />
+        <div className="relative z-10">Loading...</div>
+      </main>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-[#151515] px-4 py-8 text-white">
-      <div className="mx-auto max-w-7xl">
+    <main className="relative min-h-screen overflow-hidden bg-[#151515] px-4 py-8 text-white">
+      <FoodBackground blocks={5} />
+      <div className="relative z-10 mx-auto max-w-7xl">
         <header className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-[#1f1f1f] p-6 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
             {brand?.logoUrl || brand?.imgUrl ? <Image src={brand.logoUrl || brand.imgUrl || ""} alt={brand.name} width={74} height={74} className="rounded-2xl object-contain" /> : null}

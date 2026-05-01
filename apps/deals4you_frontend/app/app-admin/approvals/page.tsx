@@ -3,6 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { useCallback, useEffect, useState } from "react";
 import { apiBaseUrl, authHeaders, type BrandProfile } from "@/lib/deals";
+import { FoodBackground } from "@/components/food-background";
 
 export default function AppAdminApprovalsPage() {
   const { getToken } = useAuth();
@@ -34,8 +35,9 @@ export default function AppAdminApprovalsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#151515] px-4 py-8 text-white">
-      <div className="mx-auto max-w-6xl">
+    <main className="relative min-h-screen overflow-hidden bg-[#151515] px-4 py-8 text-white">
+      <FoodBackground blocks={5} />
+      <div className="relative z-10 mx-auto max-w-6xl">
         <header className="rounded-3xl border border-white/10 bg-[#1f1f1f] p-6">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-yellow-400">App admin</p>
           <h1 className="mt-2 text-3xl font-bold">Brand approvals</h1>

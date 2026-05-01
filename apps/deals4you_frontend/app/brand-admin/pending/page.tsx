@@ -1,10 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { fetchDomainUser, type DomainUser } from "@/lib/deals";
+import { DealsLogo } from "@/components/deals-logo";
+import { FoodBackground } from "@/components/food-background";
 
 export default function PendingBrandPage() {
   const { getToken } = useAuth();
@@ -19,10 +20,11 @@ export default function PendingBrandPage() {
   }, [getToken]);
 
   return (
-    <main className="min-h-screen bg-[#151515] px-4 py-8 text-white">
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl items-center justify-center">
+    <main className="relative min-h-screen overflow-hidden bg-[#151515] px-4 py-8 text-white">
+      <FoodBackground blocks={4} />
+      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl items-center justify-center">
         <section className="rounded-[2rem] border border-white/10 bg-[#1f1f1f] p-8 text-center shadow-2xl shadow-black/40">
-          <Image src="/assets/logoo.png" alt="DealsForYou" width={170} height={110} className="mx-auto object-contain" />
+          <DealsLogo className="mx-auto" />
           <p className="mt-4 text-sm font-semibold uppercase tracking-[0.2em] text-yellow-400">Review pending</p>
           <h1 className="mt-3 text-3xl font-bold">{user?.brand?.name ?? "Your brand"} is waiting for approval</h1>
           <p className="mt-3 text-slate-400">

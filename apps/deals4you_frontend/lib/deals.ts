@@ -73,6 +73,17 @@ export interface BrandProfile {
 export const authHeaders = (token?: string | null): HeadersInit =>
   token ? { Authorization: `Bearer ${token}` } : {};
 
+export async function readJsonResponse<T = unknown>(response: Response): Promise<T | null> {
+  const text = await response.text();
+  if (!text.trim()) return null;
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
 export const getRoleHomePath = (user: DomainUser | null) => {
   if (!user) return "/sign-up";
   if (user.role === "APP_ADMIN") return "/app-admin/approvals";
@@ -92,8 +103,8 @@ export async function fetchDomainUser(token?: string | null): Promise<DomainUser
   if (response.status === 404) return null;
   if (!response.ok) throw new Error("Could not fetch your profile.");
 
-  const payload = await response.json();
-  return payload.data ?? null;
+  const payload = await readJsonResponse<{ data?: DomainUser }>(response);
+  return payload?.data ?? null;
 }
 
 export async function uploadImage(file: File, folder: string): Promise<string> {
@@ -110,9 +121,13 @@ export async function uploadImage(file: File, folder: string): Promise<string> {
     body: JSON.stringify({ file: dataUrl, folder }),
   });
 
-  const payload = await response.json().catch(() => ({}));
+  const payload = await readJsonResponse<{ message?: string; data?: { url?: string } }>(response);
   if (!response.ok) {
     throw new Error(payload?.message ?? "Image upload failed.");
+  }
+
+  if (!payload?.data?.url) {
+    throw new Error("Image upload response did not include a URL.");
   }
 
   return payload.data.url;

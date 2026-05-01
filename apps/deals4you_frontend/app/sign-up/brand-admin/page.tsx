@@ -1,11 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { apiBaseUrl, uploadImage } from "@/lib/deals";
+import { DealsLogo } from "@/components/deals-logo";
+import { FoodBackground } from "@/components/food-background";
 
 type Draft = {
   firstName: string;
@@ -54,6 +55,8 @@ const initialDraft: Draft = {
 };
 
 const list = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
+const inputClass = "rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500";
+const labelClass = "grid gap-2 text-sm font-semibold text-slate-200";
 
 export default function BrandAdminSignUpPage() {
   const { signUp, errors, fetchStatus } = useSignUp();
@@ -149,18 +152,22 @@ export default function BrandAdminSignUpPage() {
     signUp.missingFields.length === 0;
 
   return (
-    <main className="min-h-screen bg-[#151515] px-4 py-8 text-white">
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl items-center justify-center">
+    <main className="relative min-h-screen overflow-hidden bg-[#151515] px-4 py-8 text-white">
+      <FoodBackground blocks={5} />
+      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl items-center justify-center">
         <section className="w-full max-w-4xl rounded-[2rem] border border-white/10 bg-[#1f1f1f]/95 p-8 shadow-2xl shadow-black/40 sm:p-10">
           <div className="flex justify-center">
-            <Image src="/assets/logoo.png" alt="DealsForYou" width={170} height={110} className="object-contain" priority />
+            <DealsLogo priority />
           </div>
           <h1 className="mt-2 text-center text-3xl font-bold">Sign up as brand admin</h1>
           <p className="mt-2 text-center text-sm text-slate-400">Create a brand profile. Your account will be reviewed before the dashboard unlocks.</p>
 
           {needsCode ? (
             <form action={verify} className="mt-7 grid gap-4">
-              <input name="code" placeholder="Verification code" className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
+              <label className={labelClass}>
+                <span><span className="text-red-400">*</span> Verification code</span>
+                <input name="code" required className={inputClass} />
+              </label>
               {errors.fields.code ? <p className="text-sm text-red-300">{errors.fields.code.message}</p> : null}
               {message ? <p className="text-sm text-red-300">{message}</p> : null}
               <button className="rounded-full bg-red-600 px-5 py-3 text-sm font-bold transition hover:bg-red-500">Verify and submit brand</button>
@@ -168,33 +175,94 @@ export default function BrandAdminSignUpPage() {
           ) : (
             <>
               <div className="mt-7 grid gap-4 md:grid-cols-2">
-                <input placeholder="Admin first name" value={draft.firstName} onChange={(e) => update("firstName", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <input placeholder="Admin last name" value={draft.lastName} onChange={(e) => update("lastName", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <input placeholder="Admin email" type="email" value={draft.email} onChange={(e) => update("email", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <input placeholder="Password" type="password" value={draft.password} onChange={(e) => update("password", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <input placeholder="Admin phone" value={draft.phone} onChange={(e) => update("phone", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <input placeholder="Role / title" value={draft.title} onChange={(e) => update("title", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <input placeholder="Brand name" value={draft.brandName} onChange={(e) => update("brandName", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <input placeholder="Tagline (optional)" value={draft.tagline} onChange={(e) => update("tagline", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <textarea placeholder="Short brand description" value={draft.description} onChange={(e) => update("description", e.target.value)} className="min-h-28 rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500 md:col-span-2" />
-                <input placeholder="Brand contact email" type="email" value={draft.contactEmail} onChange={(e) => update("contactEmail", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <input placeholder="Brand contact phone" value={draft.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <input placeholder="Country" value={draft.country} onChange={(e) => update("country", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <input placeholder="Cities, comma separated" value={draft.cities} onChange={(e) => update("cities", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <input placeholder="Areas / branches, comma separated" value={draft.areas} onChange={(e) => update("areas", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <input placeholder="Cuisine tags, comma separated" value={draft.cuisineTags} onChange={(e) => update("cuisineTags", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <input placeholder="Instagram URL (optional)" value={draft.instagram} onChange={(e) => update("instagram", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <input placeholder="Facebook URL (optional)" value={draft.facebook} onChange={(e) => update("facebook", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500" />
-                <label className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 text-sm text-slate-300">
-                  Brand logo
-                  <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm" />
+                <label className={labelClass}>
+                  <span><span className="text-red-400">*</span> Admin first name</span>
+                  <input value={draft.firstName} onChange={(e) => update("firstName", e.target.value)} required className={inputClass} />
+                </label>
+                <label className={labelClass}>
+                  <span><span className="text-red-400">*</span> Admin last name</span>
+                  <input value={draft.lastName} onChange={(e) => update("lastName", e.target.value)} required className={inputClass} />
+                </label>
+                <label className={labelClass}>
+                  <span><span className="text-red-400">*</span> Admin email</span>
+                  <input type="email" value={draft.email} onChange={(e) => update("email", e.target.value)} required className={inputClass} />
+                </label>
+                <label className={labelClass}>
+                  <span><span className="text-red-400">*</span> Password</span>
+                  <input type="password" value={draft.password} onChange={(e) => update("password", e.target.value)} required className={inputClass} />
+                </label>
+                <label className={labelClass}>
+                  <span><span className="text-red-400">*</span> Admin phone</span>
+                  <input value={draft.phone} onChange={(e) => update("phone", e.target.value)} required className={inputClass} />
+                </label>
+                <label className={labelClass}>
+                  <span><span className="text-red-400">*</span> Role / title</span>
+                  <input value={draft.title} onChange={(e) => update("title", e.target.value)} required className={inputClass} />
+                </label>
+                <label className={labelClass}>
+                  <span><span className="text-red-400">*</span> Brand name</span>
+                  <input value={draft.brandName} onChange={(e) => update("brandName", e.target.value)} required className={inputClass} />
+                </label>
+                <label className={labelClass}>
+                  Tagline (optional)
+                  <input value={draft.tagline} onChange={(e) => update("tagline", e.target.value)} className={inputClass} />
+                </label>
+                <label className={`${labelClass} md:col-span-2`}>
+                  <span><span className="text-red-400">*</span> Short brand description</span>
+                  <textarea value={draft.description} onChange={(e) => update("description", e.target.value)} required className={`${inputClass} min-h-28`} />
+                </label>
+                <label className={labelClass}>
+                  <span><span className="text-red-400">*</span> Brand contact email</span>
+                  <input type="email" value={draft.contactEmail} onChange={(e) => update("contactEmail", e.target.value)} required className={inputClass} />
+                </label>
+                <label className={labelClass}>
+                  <span><span className="text-red-400">*</span> Brand contact phone</span>
+                  <input value={draft.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} required className={inputClass} />
+                </label>
+                <label className={labelClass}>
+                  <span><span className="text-red-400">*</span> Country</span>
+                  <input value={draft.country} onChange={(e) => update("country", e.target.value)} required className={inputClass} />
+                </label>
+                <label className={labelClass}>
+                  <span><span className="text-red-400">*</span> Cities, comma separated</span>
+                  <input value={draft.cities} onChange={(e) => update("cities", e.target.value)} required className={inputClass} />
+                </label>
+                <label className={labelClass}>
+                  Areas / branches, comma separated
+                  <input value={draft.areas} onChange={(e) => update("areas", e.target.value)} className={inputClass} />
+                </label>
+                <label className={labelClass}>
+                  Cuisine tags, comma separated
+                  <input value={draft.cuisineTags} onChange={(e) => update("cuisineTags", e.target.value)} className={inputClass} />
+                </label>
+                <label className={labelClass}>
+                  Instagram URL (optional)
+                  <input value={draft.instagram} onChange={(e) => update("instagram", e.target.value)} className={inputClass} />
+                </label>
+                <label className={labelClass}>
+                  Facebook URL (optional)
+                  <input value={draft.facebook} onChange={(e) => update("facebook", e.target.value)} className={inputClass} />
+                </label>
+                <label className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 text-sm font-semibold text-slate-200">
+                  <span><span className="text-red-400">*</span> Brand logo</span>
+                  <input type="file" accept="image/*" required onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm" />
                 </label>
                 <label className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 text-sm font-semibold">
                   Request website scraper
                   <input type="checkbox" checked={draft.scrapeRequested} onChange={(e) => update("scrapeRequested", e.target.checked)} className="h-5 w-5 accent-red-600" />
                 </label>
-                <input placeholder={draft.scrapeRequested ? "Website URL (required)" : "Website URL (optional)"} value={draft.website} onChange={(e) => update("website", e.target.value)} className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500 md:col-span-2" />
-                <textarea placeholder="Notes for review (optional)" value={draft.notes} onChange={(e) => update("notes", e.target.value)} className="min-h-24 rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 outline-none focus:border-red-500 md:col-span-2" />
+                <label className={`${labelClass} md:col-span-2`}>
+                  {draft.scrapeRequested ? (
+                    <span><span className="text-red-400">*</span> Website URL</span>
+                  ) : (
+                    "Website URL (optional)"
+                  )}
+                  <input value={draft.website} onChange={(e) => update("website", e.target.value)} required={draft.scrapeRequested} className={inputClass} />
+                </label>
+                <label className={`${labelClass} md:col-span-2`}>
+                  Notes for review (optional)
+                  <textarea value={draft.notes} onChange={(e) => update("notes", e.target.value)} className={`${inputClass} min-h-24`} />
+                </label>
               </div>
               {message ? <p className="mt-4 text-sm text-red-300">{message}</p> : null}
               <button type="button" onClick={() => void createAccount()} disabled={fetchStatus === "fetching"} className="mt-6 w-full rounded-full bg-red-600 px-5 py-3 text-sm font-bold transition hover:bg-red-500 disabled:opacity-60">
