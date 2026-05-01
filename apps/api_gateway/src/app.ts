@@ -1,6 +1,8 @@
 import express, { Application } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import dealsRoutes from "./routes/deals.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import userRoutes from "./routes/user.routes.js";
@@ -10,7 +12,8 @@ import uploadRoutes from "./routes/upload.routes.js";
 import { notFoundHandler } from "./middlewares/notFoundHandler.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 
-dotenv.config();
+const __dirname = dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: resolve(__dirname, "../.env") });
 
 const app: Application = express();
 
