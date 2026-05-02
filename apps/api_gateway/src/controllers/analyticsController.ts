@@ -1,4 +1,5 @@
 import type { RequestHandler } from "express";
+import { getAuth } from "@clerk/express";
 import { analyticsService } from "../services/analyticsService.js";
 
 export const getTrendingDeals: RequestHandler = async (_req, res, next) => {
@@ -30,8 +31,15 @@ export const getTrendingBrands: RequestHandler = async (_req, res, next) => {
 };
 
 export const trackEvent: RequestHandler = async (req, res, next) => {
+  //get the session id from the request header
+  const { sessionId } = getAuth(req);
+
+  // adding session id to the request body
+   const payload = { ...req.body,
+    sessionId: sessionId
+     };
   try {
-    await analyticsService.trackEvent(req.body);
+    await analyticsService.trackEvent(payload);
 
     res.status(204).end();
   } catch (error) {
