@@ -67,7 +67,7 @@ export const mapHowdyDeals = (rawDeals: any[], brandSlug: string): Deal[] => {
   }));
 };
 
-// kababjees 
+// kababjees
 export const mapKababjeesDeals = (
   rawDeals: any[],
   brandSlug: string

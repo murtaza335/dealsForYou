@@ -20,12 +20,11 @@ class DealsService {
     return this.dealRepository.getDealById(dealId);
   }
 
-  async getDealsByIds(deals: Array<{ dealId: string; brandSlug: string }>): Promise<DealDocument[]> {
+  async getDealsByIds(deals: string[] | Array<{ dealId: string; brandSlug?: string }>): Promise<DealDocument[]> {
     return this.dealRepository.getDealsByIds(deals);
   }
 
   async getFilterOptions(): Promise<DealFilterOptions> {
-    console.log("in service")
     return this.dealRepository.getFilterOptions();
   }
 

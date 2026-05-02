@@ -7,7 +7,7 @@ import { ScraperSourceDocument } from "../models/scraperSources.js";
 
 // hosdy meny api respnse has a data array that has one object in which first the menu detail then that deatil has section all section is an array in which each section is stored and in each section there is a all_sub_section array in which there is dish array in which the deal or other item is stored . we first filter the section based on their name if it include deal related keyword then we check weather that category is active or not by checking the day field if that category is active for today then we check weather that category is active for current time by checking available_from and available_till field if that category is active for current time then we loop through its sub section and then loop through its dish and check if that dish is deal or not by checking isdeal field if it is deal then we push it in rawdeals array and then we map that rawdeals to our internal format using mapHowdyDeals function
 
-// there also require query params 
+// there also require query params
 
 // HOWDY SCRAPER
 const DEAL_KEYWORDS = ["deal", "deals", "platter", "feast"];
@@ -100,7 +100,7 @@ export class HowdyScraper extends BaseScraper {
         // STEP 4: dishes
         for (const sub of section?.all_sub_section || []) {
           for (const dish of sub?.dish || []) {
-            
+
             // IMPORTANT FIX: also check isdeal flag
             if (dish?.isdeal !== 1) continue;
 

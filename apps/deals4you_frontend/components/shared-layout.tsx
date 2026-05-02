@@ -1,71 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { UserButton, useAuth } from "@clerk/nextjs";
 import { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-
-const scatteredIcons = [
-  { src: "/assets/pizza.png", alt: "pizza", top: "1%", left: "8%", size: 80, rotate: -16 },
-  { src: "/assets/burger.png", alt: "burger", top: "2%", left: "68%", size: 88, rotate: 12 },
-  {
-    src: "/assets/french-fries.png",
-    alt: "fries",
-    top: "1%",
-    left: "94%",
-    size: 74,
-    rotate: -7,
-  },
-  { src: "/assets/pizza.png", alt: "pizza", top: "34%", left: "46%", size: 84, rotate: 9 },
-  { src: "/assets/burger.png", alt: "burger", top: "1%", left: "35%", size: 92, rotate: -12 },
-  {
-    src: "/assets/french-fries.png",
-    alt: "fries",
-    top: "60%",
-    left: "25%",
-    size: 78,
-    rotate: 13,
-  },
-  { src: "/assets/pizza.png", alt: "pizza", top: "53%", left: "67%", size: 86, rotate: -9 },
-  { src: "/assets/burger.png", alt: "burger", top: "53%", left: "90%", size: 90, rotate: 10 },
-  {
-    src: "/assets/french-fries.png",
-    alt: "fries",
-    top: "35%",
-    left: "10%",
-    size: 72,
-    rotate: 6,
-  },
-];
-
-const PatternBlock = ({ idSuffix }: { idSuffix: string }) => (
-  <div className="relative h-screen w-full shrink-0">
-    {scatteredIcons.map((icon, index) => (
-      <div
-        key={`${icon.alt}-${index}-${idSuffix}`}
-        className="pointer-events-none absolute"
-        style={{
-          top: icon.top,
-          left: icon.left,
-          transform: `translate(-50%, -50%) rotate(${icon.rotate}deg)`,
-          opacity: 0.45,
-        }}
-      >
-        <Image
-          src={icon.src}
-          alt={icon.alt}
-          width={icon.size}
-          height={icon.size}
-          style={{
-            filter: "brightness(0) invert(1) grayscale(1) contrast(1.5)",
-          }}
-        />
-      </div>
-    ))}
-  </div>
-);
+import { DealsLogo } from "@/components/deals-logo";
+import { FoodBackground } from "@/components/food-background";
 
 const tabs: { href: string; label: string; key: "home" | "deals" | "about" }[] = [
   { href: "/", label: "Home", key: "home" },
@@ -125,17 +66,11 @@ export function SharedLayout({ children }: SharedLayoutProps) {
         </nav>
 
         <div className="absolute left-5 top-1/2 flex -translate-y-1/2 items-center sm:left-7">
-          <Image
-            src="/assets/logoo.png"
-            alt="DealsForYou logo"
-            width={220}
-            height={220}
+          <DealsLogo
+            width={180}
+            height={120}
             priority
-            className="h-[220px] w-[220px] object-contain"
-            style={{
-              filter:
-                "brightness(0) saturate(100%) invert(13%) sepia(94%) saturate(6361%) hue-rotate(357deg) brightness(112%) contrast(117%)",
-            }}
+            className="h-24 w-40 sm:h-28 sm:w-48"
           />
         </div>
 
@@ -153,19 +88,13 @@ export function SharedLayout({ children }: SharedLayoutProps) {
       </header>
 
       {/* ── Parallax background pattern ── */}
-      <div
-        className="absolute inset-0 z-0 pointer-events-none"
+      <FoodBackground
+        blocks={10}
         style={{
           transform: "translateZ(-25px) scale(3.5)",
           transformOrigin: "top",
         }}
-      >
-        <div className="flex flex-col w-full">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <PatternBlock key={i} idSuffix={i.toString()} />
-          ))}
-        </div>
-      </div>
+      />
 
       {/* ── Animated page content ── */}
       <AnimatePresence mode="wait" >
