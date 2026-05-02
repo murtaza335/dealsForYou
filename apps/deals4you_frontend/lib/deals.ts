@@ -1,5 +1,4 @@
 export interface Deal {
-  id?: number;
   dealId: string;
   externalId: string;
   title: string;
@@ -21,6 +20,10 @@ export interface Deal {
   imgUrl: string;
   brandSlug: string;
   baseUrl?: string;
+  viewsCount?: number;
+  sourceType?: "SCRAPER" | "MANUAL";
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ApiResponse {

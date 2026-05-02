@@ -13,7 +13,7 @@ type DealCardProps = {
 export function DealCard({ deal, onOpen }: DealCardProps) {
   const { getToken, userId } = useAuth();
 
-  const handleDealClick = async (dealId: number) => {
+  const handleDealClick = async (dealId: string) => {
     onOpen();
     if (!apiBaseUrl) {
       return;
@@ -21,7 +21,6 @@ export function DealCard({ deal, onOpen }: DealCardProps) {
 
     try {
       const token = await getToken();
-      console.log(token)
       await fetch(`${apiBaseUrl}/api/analytics/event`, {
         method: "POST",
         headers: withBearerToken(token, {
