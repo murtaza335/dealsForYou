@@ -15,7 +15,7 @@ export function DealCard({ deal }: DealCardProps) {
   const { getToken } = useAuth();
 
   
-  const handleDealClick = async (dealId: number) => {
+  const handleDealClick = async (dealId: string) => {
     if (!recommendationBaseUrl) {
       return;
     }
@@ -39,7 +39,7 @@ export function DealCard({ deal }: DealCardProps) {
 
   return (
     <article className="group relative overflow-hidden rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-slate-200/50">
-      <button type="button" onClick={() => void handleDealClick(deal.id)} className="block w-full text-left">
+      <button type="button" onClick={() => void handleDealClick(deal.dealId)} className="block w-full text-left">
         <div className="relative overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
           <img
             src={deal.imgUrl}
