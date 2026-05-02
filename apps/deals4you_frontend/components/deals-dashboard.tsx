@@ -4,6 +4,7 @@ import Image from "next/image";
 import { UserButton, SignUpButton, useAuth, useUser } from "@clerk/nextjs";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { DealCard } from "@/components/deal-card";
+import { DealModal } from "@/components/deal-modal";
 import {
   apiBaseUrl,
   buildQuery,
@@ -40,7 +41,6 @@ export function DealsDashboard() {
   const userId = user?.id;
 
   const [brand, setBrand] = useState("");
-  const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [query, setQuery] = useState("");
 
@@ -49,6 +49,8 @@ export function DealsDashboard() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [isExpanded, setIsExpanded] = useState(false);
+  const [brandsList, setBrandsList] = useState<{ name: string }[]>([]);
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
 
   const fetchFilteredDeals = useCallback(async () => {
     setLoadingFiltered(true);
@@ -56,7 +58,6 @@ export function DealsDashboard() {
 
     try {
       const queryParam = buildQuery({
-        minPrice,
         maxPrice,
         query,
         brand,
@@ -72,14 +73,29 @@ export function DealsDashboard() {
 
       const payload: ApiResponse = await response.json();
       console.log("Fetched deals:", payload.data);
-      setFilteredDeals(payload.data ?? []);
+      const fetchedDeals = payload.data ?? [];
+      setFilteredDeals(fetchedDeals);
+
+      if (query.trim() && userId) {
+        fetch(`${apiBaseUrl}/api/analytics/event`, {
+          method: "POST",
+          headers: withBearerToken(token, { "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            eventType: "SEARCH_QUERY",
+            userId: userId,
+            dealId: fetchedDeals.map((d: Deal) => d.id).join(","),
+            brandSlug: fetchedDeals.map((d: Deal) => d.brandSlug).join(","),
+            queryText: query,
+          }),
+        }).catch((err) => console.error("Failed to track search event:", err));
+      }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unexpected error.");
       setFilteredDeals([]);
     } finally {
       setLoadingFiltered(false);
     }
-  }, [brand, minPrice, maxPrice, query, getToken]);
+  }, [brand, maxPrice, query, getToken]);
 
   const fetchBrands = useCallback(async () => {
     try {
@@ -91,8 +107,9 @@ export function DealsDashboard() {
         throw new Error("Could not fetch brands.");
       }
 
-      const payload: ApiResponse = await response.json();
+      const payload = await response.json();
       console.log("Fetched brands:", payload.data);
+      setBrandsList(payload.data ?? []);
     } catch (error) {
       console.error("Error fetching brands:", error);
     }
@@ -100,18 +117,15 @@ export function DealsDashboard() {
 
   useEffect(() => {
     if (!isSignedIn) return;
-
-    const timer = setTimeout(() => {
-      void fetchFilteredDeals();
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, [isSignedIn, fetchFilteredDeals]);
+    void fetchFilteredDeals();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn]);
 
   useEffect(() => {
     if (!isSignedIn) return;
     void fetchBrands();
-  }, [isSignedIn, fetchBrands]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn]);
 
   const onFilterSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -120,7 +134,7 @@ export function DealsDashboard() {
 
 
 
- 
+
 
 
 
@@ -192,38 +206,76 @@ export function DealsDashboard() {
                       <span>What&apos;s your mood?</span>
                     </motion.div>
                   ) : (
-                    <motion.div
+                    <motion.form
                       key="search"
+                      noValidate
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
                       transition={{ duration: 0.4, ease: "easeOut" }}
-                      className="flex items-center w-full gap-3"
+                      className="flex items-center w-full gap-2 lg:gap-3"
+                      onSubmit={onFilterSubmit}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <svg className="h-6 w-6 flex-shrink-0 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-5 w-5 lg:h-6 lg:w-6 flex-shrink-0 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
                       <input
                         autoFocus
-                        placeholder="Search deals by mood, brand, food..."
+                        placeholder="Search deals..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        className="flex-1 bg-transparent outline-none text-white placeholder-gray-400 h-full resize-none"
+                        className="flex-1 min-w-[100px] bg-transparent outline-none text-white placeholder-gray-400 h-full resize-none text-sm lg:text-base"
                       />
+
+                      <div className="hidden lg:block h-6 w-px bg-slate-700 mx-1"></div>
+
+                      <select
+                        value={brand}
+                        onChange={(e) => setBrand(e.target.value)}
+                        className="hidden md:block bg-transparent outline-none text-white [&>option]:text-slate-900 cursor-pointer text-sm lg:text-base w-24 lg:w-32"
+                      >
+                        <option value="">All Brands</option>
+                        {brandsList.map((b, i) => (
+                          <option key={i} value={b.name}>{b.name}</option>
+                        ))}
+                      </select>
+
+                      <div className="hidden lg:block h-6 w-px bg-slate-700 mx-1"></div>
+
+                      <div className="hidden sm:flex items-center gap-2">
+                        <input
+                          type="number"
+                          placeholder="Max Rs"
+                          value={maxPrice}
+                          onChange={(e) => setMaxPrice(e.target.value)}
+                          min="0"
+                          max="100000"
+                          step="500"
+                          className="w-20 lg:w-24 bg-transparent outline-none text-white placeholder-gray-400 text-sm lg:text-base"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="ml-auto rounded-full bg-yellow-500 px-3 lg:px-4 py-1.5 text-xs lg:text-sm font-bold text-slate-900 hover:bg-yellow-400 transition-colors flex-shrink-0"
+                      >
+                        Search
+                      </button>
 
                       {/* closing */}
                       <motion.button
+                        type="button"
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setIsExpanded(false)}
-                        className="p-1 rounded-full hover:bg-white/10 transition-colors duration-200 flex-shrink-0"
+                        className="p-1 ml-1 lg:ml-2 rounded-full hover:bg-white/10 transition-colors duration-200 flex-shrink-0"
                       >
-                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-5 w-5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </motion.button>
-                    </motion.div>
+                    </motion.form>
                   )}
 
                 </AnimatePresence>
@@ -235,11 +287,12 @@ export function DealsDashboard() {
           <SectionEmptyState loading={loadingFiltered} items={filteredDeals} emptyText="No deals match this filter." />
           <div className="mt-8 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
             {filteredDeals.map((deal) => (
-              <DealCard key={deal.externalId} deal={deal} />
+              <DealCard key={deal.externalId} deal={deal} onOpen={() => setSelectedDeal(deal)} />
             ))}
           </div>
         </section>
       </div>
+      <DealModal deal={selectedDeal} onClose={() => setSelectedDeal(null)} />
     </div>
   );
 }

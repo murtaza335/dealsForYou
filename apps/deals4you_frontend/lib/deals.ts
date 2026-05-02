@@ -6,6 +6,7 @@ export interface Deal {
   price: number;
   imgUrl: string;
   brandSlug: string;
+  baseUrl?: string;
 }
 
 export interface ApiResponse {

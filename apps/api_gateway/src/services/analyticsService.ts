@@ -50,6 +50,29 @@ class AnalyticsService {
     const payload = await this.fetchFromAnalyticsService("/api/analytics/trending/brands");
     return payload.data ?? [];
   }
+
+  private async postToAnalyticsService(pathname: string, body: unknown) {
+    const analyticsServiceBaseUrl = this.getAnalyticsServiceBaseUrl();
+    const url = `${analyticsServiceBaseUrl.replace(/\/$/, "")}${pathname}`;
+
+    console.log("[Gateway] Forwarding analytics POST request to:", url);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to POST to analytics service (${response.status}).`);
+    }
+  }
+
+  async trackEvent(payload: unknown) {
+    return this.postToAnalyticsService("/api/analytics/event", payload);
+  }
 }
 
 export const analyticsService = new AnalyticsService();

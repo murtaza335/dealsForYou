@@ -185,7 +185,7 @@ class DealsService {
     const dealsServiceBaseUrl =
       process.env.deals_url ?? process.env.DEALS_URL ?? "http://localhost:5002";
 
-    const url = `${dealsServiceBaseUrl.replace(/\/$/, "")}/api/deals/brands`;
+    const url = `${dealsServiceBaseUrl.replace(/\/$/, "")}/api/deals/filters/brands`;
 
     console.log("[Gateway] Forwarding brands request to:", url);
 
