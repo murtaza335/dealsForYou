@@ -5,7 +5,16 @@ import { userDomainService } from "../services/userDomainService.js";
 export const getMe: RequestHandler = async (req, res, next) => {
   try {
     const auth = getAuth(req);
-    const data = await userDomainService.fetchMe(req.headers.authorization, auth.userId ?? undefined);
+    if (!auth.userId?.trim()) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+    const data = await userDomainService.fetchMe(req.headers.authorization, auth.userId);
+    if (data === null) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found in domain DB",
+      });
+    }
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);

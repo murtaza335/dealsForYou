@@ -5,8 +5,25 @@ export interface Deal {
   title: string;
   description: string;
   price: number;
+  originalPrice?: number;
+  currency?: string;
+  discountPercent?: number;
+  minPersons?: number;
+  maxPersons?: number;
+  cuisineTags?: string[];
+  mealType?: string[];
+  conditions?: string;
+  startTime?: string;
+  endTime?: string;
+  isExpired?: boolean;
+  isActive?: boolean;
+  isHot?: boolean;
   imgUrl: string;
   brandSlug: string;
+  viewsCount?: number;
+  sourceType?: "SCRAPER" | "MANUAL";
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ApiResponse {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useSignIn, useSignUp } from "@clerk/nextjs";
+import { useSignIn, useSignUp, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { apiBaseUrl, readJsonResponse } from "@/lib/deals";
 import { DealsLogo } from "@/components/deals-logo";
@@ -34,9 +34,13 @@ const inputClass = "rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 ou
 const labelClass = "grid gap-2 text-sm font-semibold text-slate-200";
 type MessageTone = "error" | "success";
 
+const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+const isValidPhone = (value: string) => !value.trim() || /^[+()\d\s-]{7,20}$/.test(value.trim());
+
 export default function Page() {
   const { signUp, errors, fetchStatus } = useSignUp();
   const { signIn } = useSignIn();
+  const { user } = useUser();
   const router = useRouter();
   const [draft, setDraft] = useState(initialDraft);
   const [message, setMessage] = useState<string | null>(null);
@@ -58,6 +62,18 @@ export default function Page() {
     setMessage(null);
     if (!draft.firstName.trim() || !draft.lastName.trim() || !draft.email.trim() || !draft.password.trim()) {
       showError("Complete all required fields.");
+      return;
+    }
+    if (!isValidEmail(draft.email)) {
+      showError("Enter a valid email address.");
+      return;
+    }
+    if (draft.password.length < 8) {
+      showError("Password must be at least 8 characters.");
+      return;
+    }
+    if (!isValidPhone(draft.phone)) {
+      showError("Enter a valid phone number or leave it blank.");
       return;
     }
 
@@ -96,19 +112,67 @@ export default function Page() {
     }
   };
 
+  const submitConsumerProfile = async (clerkUserId: string) => {
+    const response = await fetch(`${apiBaseUrl}/api/users/upsert-from-clerk`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clerkUserId,
+        email: draft.email.trim(),
+        firstName: draft.firstName.trim(),
+        lastName: draft.lastName.trim(),
+        role: "END_USER",
+        tenantId: null,
+        brandId: null,
+        metadata: {
+          source: "clerk",
+          phone: draft.phone.trim() || null,
+          city: draft.city.trim() || null,
+          area: draft.area.trim() || null,
+          foodPreferences: draft.foodPreferences.split(",").map((item) => item.trim()).filter(Boolean),
+        },
+      }),
+    });
+    const payload = await readJsonResponse<{ message?: string; error?: string }>(response);
+    if (!response.ok) {
+      throw new Error(payload?.message ?? payload?.error ?? "Account was created in Clerk, but profile setup failed.");
+    }
+  };
+
   const verify = async (formData: FormData) => {
     setMessage(null);
     const code = String(formData.get("code") ?? "").trim();
-    if (!code) {
-      showError("Enter the verification code from your email.");
-      return;
-    }
-
     setIsWorking(true);
     try {
+      if (clerkSignUpComplete) {
+        await submitConsumerProfile(signUp.createdUserId!);
+        showSuccess("Account created. Signing you in...");
+        setDraft(initialDraft);
+        await signUp.finalize({
+          navigate: () => router.push("/"),
+        });
+        return;
+      }
+
+      if (!code) {
+        showError("Enter the verification code from your email.");
+        return;
+      }
+
       const verificationResult = await signUp.verifications.verifyEmailCode({ code });
       if (verificationResult.error) {
-        showError(verificationResult.error.longMessage ?? verificationResult.error.message);
+        const msg = verificationResult.error.longMessage ?? verificationResult.error.message ?? "";
+        const recoveryId = user?.id ?? signUp.createdUserId ?? null;
+        if (recoveryId && /already|signed in|complete|verified/i.test(msg)) {
+          await submitConsumerProfile(recoveryId);
+          showSuccess("Account created. Signing you in...");
+          setDraft(initialDraft);
+          await signUp.finalize({
+            navigate: () => router.push("/"),
+          });
+          return;
+        }
+        showError(msg || "Verification failed.");
         return;
       }
 
@@ -117,32 +181,7 @@ export default function Page() {
         return;
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/users/upsert-from-clerk`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clerkUserId: signUp.createdUserId,
-          email: draft.email.trim(),
-          firstName: draft.firstName.trim(),
-          lastName: draft.lastName.trim(),
-          role: "END_USER",
-          tenantId: null,
-          brandId: null,
-          metadata: {
-            source: "clerk",
-            phone: draft.phone.trim() || null,
-            city: draft.city.trim() || null,
-            area: draft.area.trim() || null,
-            foodPreferences: draft.foodPreferences.split(",").map((item) => item.trim()).filter(Boolean),
-          },
-        }),
-      });
-      const payload = await readJsonResponse<{ message?: string; error?: string }>(response);
-      if (!response.ok) {
-        showError(payload?.message ?? payload?.error ?? "Account was created in Clerk, but profile setup failed.");
-        return;
-      }
-
+      await submitConsumerProfile(signUp.createdUserId);
       showSuccess("Account created. Signing you in...");
       setDraft(initialDraft);
       await signUp.finalize({
@@ -170,6 +209,8 @@ export default function Page() {
     signUp.status === "missing_requirements" &&
     signUp.unverifiedFields.includes("email_address") &&
     signUp.missingFields.length === 0;
+
+  const clerkSignUpComplete = signUp.status === "complete" && !!signUp.createdUserId;
   const messageClass =
     messageTone === "success"
       ? "mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200"
@@ -190,7 +231,7 @@ export default function Page() {
             <form action={verify} className="mt-7 grid gap-4">
               <label className={labelClass}>
                 <span><span className="text-red-400">*</span> Verification code</span>
-                <input name="code" required className={inputClass} />
+                <input name="code" required={!clerkSignUpComplete} className={inputClass} />
               </label>
               {errors.fields.code ? <p className="text-sm text-red-300">{errors.fields.code.message}</p> : null}
               {message ? <p className={messageClass}>{message}</p> : null}

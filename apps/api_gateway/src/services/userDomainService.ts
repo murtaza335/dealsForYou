@@ -1,4 +1,18 @@
-type UserRole = "END_USER" | "BRAND_ADMIN" | "APP_ADMIN";
+export type UserRole = "END_USER" | "BRAND_ADMIN" | "APP_ADMIN";
+
+export type DomainUser = {
+  id: string;
+  clerkUserId: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: UserRole;
+  isActive: boolean;
+  tenantId: string | null;
+  brandId: string | null;
+  metadata: Record<string, unknown>;
+  brand?: unknown;
+};
 
 class UserDomainService {
   private getBaseUrl() {
@@ -10,7 +24,8 @@ class UserDomainService {
     return secret ? { "x-api-gateway-secret": secret } : {};
   }
 
-  async fetchMe(authorization?: string, clerkUserId?: string) {
+  /** Returns profile data, or null when the user domain has no row for this Clerk user (HTTP 404). */
+  async fetchMe(authorization?: string, clerkUserId?: string): Promise<DomainUser | null> {
     const response = await fetch(`${this.getBaseUrl().replace(/\/$/, "")}/api/users/me`, {
       headers: {
         ...(authorization ? { Authorization: authorization } : {}),
@@ -18,12 +33,19 @@ class UserDomainService {
       },
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch user profile (${response.status}).`);
+    const payload = (await response.json().catch(() => ({}))) as { data?: DomainUser; message?: string };
+
+    if (response.status === 404) {
+      return null;
     }
 
-    const payload = (await response.json()) as { data?: any };
-    return payload.data;
+    if (!response.ok) {
+      throw Object.assign(new Error(payload?.message ?? `Failed to fetch user profile (${response.status}).`), {
+        statusCode: response.status,
+      });
+    }
+
+    return payload.data ?? null;
   }
 
   async listUsers(role?: UserRole) {

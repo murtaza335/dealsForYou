@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
+import { UserButton, useAuth } from "@clerk/nextjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiBaseUrl, authHeaders, formatPrice, readJsonResponse, type BrandProfile, type Deal, type DomainUser } from "@/lib/deals";
 import { FoodBackground } from "@/components/food-background";
@@ -399,8 +399,11 @@ export default function AppAdminApprovalsPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#151515] px-4 py-8 text-white">
       <FoodBackground blocks={5} />
+      <div className="fixed right-5 top-5 z-30 sm:right-7">
+        <UserButton />
+      </div>
       <div className="relative z-10 mx-auto max-w-7xl">
-        <header className="rounded-3xl border border-white/10 bg-[#1f1f1f]/95 p-6 shadow-2xl shadow-black/30">
+        <header className="rounded-3xl border border-white/10 bg-[#1f1f1f]/95 p-6 pr-20 shadow-2xl shadow-black/30">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-yellow-400">App admin</p>
           <div className="mt-2 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>

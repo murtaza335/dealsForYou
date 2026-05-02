@@ -19,6 +19,10 @@ async function requireRole(req: Parameters<RequestHandler>[0], roles: string[]) 
   }
 
   const user = await userDomainService.fetchMe(req.headers.authorization, auth.userId);
+  if (!user) {
+    throw httpError("User not found in domain.", 404);
+  }
+
   if (!user.isActive) {
     throw httpError("Account suspended.", 403);
   }

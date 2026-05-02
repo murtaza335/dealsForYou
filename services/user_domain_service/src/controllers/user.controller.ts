@@ -24,9 +24,10 @@ const getService = (): UserService => {
 
 export const getMe: RequestHandler = async (req, res, next) => {
   try {
-    console.log("getMe req.headers:", req.headers);
-    const authUserId = (req.headers["user-id"] as string | undefined) ?? res.locals.authUserId;
-    console.log("getMe authUserId:", authUserId);
+    const raw =
+      (req.headers["user-id"] as string | undefined) ??
+      (typeof res.locals.authUserId === "string" ? res.locals.authUserId : undefined);
+    const authUserId = raw?.trim() ?? "";
     if (!authUserId) throw new AppError("Unauthorized", 401);
 
     const service = getService();
@@ -100,7 +101,10 @@ export const onboardBrandAdmin: RequestHandler = async (req, res, next) => {
 
 export const updateMe: RequestHandler = async (req, res, next) => {
   try {
-    const authUserId = (req.headers["user-id"] as string | undefined) ?? res.locals.authUserId;
+    const raw =
+      (req.headers["user-id"] as string | undefined) ??
+      (typeof res.locals.authUserId === "string" ? res.locals.authUserId : undefined);
+    const authUserId = raw?.trim() ?? "";
     if (!authUserId) throw new AppError("Unauthorized", 401);
 
     const payload = updateMyProfileSchema.parse(req.body);

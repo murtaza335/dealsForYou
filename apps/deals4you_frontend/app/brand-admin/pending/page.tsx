@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth } from "@clerk/nextjs";
+import { UserButton, useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchDomainUser, type DomainUser } from "@/lib/deals";
@@ -30,6 +30,9 @@ export default function PendingBrandPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#151515] px-4 py-8 text-white">
       <FoodBackground blocks={4} />
+      <div className="fixed right-5 top-5 z-30 sm:right-7">
+        <UserButton />
+      </div>
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl items-center justify-center">
         <section className="rounded-[2rem] border border-white/10 bg-[#1f1f1f] p-8 text-center shadow-2xl shadow-black/40">
           <DealsLogo className="mx-auto" />

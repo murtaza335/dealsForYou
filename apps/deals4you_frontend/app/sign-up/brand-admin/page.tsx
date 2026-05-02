@@ -59,6 +59,20 @@ const inputClass = "rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 ou
 const labelClass = "grid gap-2 text-sm font-semibold text-slate-200";
 type MessageTone = "error" | "success";
 
+const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+const isValidPhone = (value: string) => /^[+()\d\s-]{7,20}$/.test(value.trim());
+const isValidUrl = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 export default function BrandAdminSignUpPage() {
   const clerk = useClerk();
   const { user } = useUser();
@@ -97,6 +111,16 @@ export default function BrandAdminSignUpPage() {
     if (draft.scrapeRequested && !draft.website.trim()) return "Website URL is required when scraper setup is requested.";
     if (!draft.firstName.trim() || !draft.lastName.trim() || !draft.email.trim() || !draft.password.trim() || !draft.phone.trim() || !draft.title.trim()) return "Complete all admin fields.";
     if (!draft.brandName.trim() || !draft.description.trim() || !draft.contactEmail.trim() || !draft.contactPhone.trim() || !draft.country.trim() || list(draft.cities).length === 0) return "Complete all required brand fields.";
+    if (!isValidEmail(draft.email)) return "Enter a valid admin email address.";
+    if (!isValidEmail(draft.contactEmail)) return "Enter a valid brand contact email address.";
+    if (draft.password.length < 8) return "Password must be at least 8 characters.";
+    if (!isValidPhone(draft.phone)) return "Enter a valid admin phone number.";
+    if (!isValidPhone(draft.contactPhone)) return "Enter a valid brand contact phone number.";
+    if (!isValidUrl(draft.website)) return "Enter a valid website URL, including http:// or https://.";
+    if (!isValidUrl(draft.instagram)) return "Enter a valid Instagram URL, including http:// or https://.";
+    if (!isValidUrl(draft.facebook)) return "Enter a valid Facebook URL, including http:// or https://.";
+    if (!logoFile) return "Brand logo is required.";
+    if (!logoFile.type.startsWith("image/")) return "Brand logo must be an image file.";
     return null;
   };
 
@@ -310,15 +334,15 @@ export default function BrandAdminSignUpPage() {
                 </label>
                 <label className={labelClass}>
                   Instagram URL (optional)
-                  <input value={draft.instagram} onChange={(e) => update("instagram", e.target.value)} className={inputClass} />
+                  <input type="url" value={draft.instagram} onChange={(e) => update("instagram", e.target.value)} className={inputClass} />
                 </label>
                 <label className={labelClass}>
                   Facebook URL (optional)
-                  <input value={draft.facebook} onChange={(e) => update("facebook", e.target.value)} className={inputClass} />
+                  <input type="url" value={draft.facebook} onChange={(e) => update("facebook", e.target.value)} className={inputClass} />
                 </label>
                 <label className="rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 text-sm font-semibold text-slate-200">
-                  <span>Brand logo (optional)</span>
-                  <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm" />
+                  <span><span className="text-red-400">*</span> Brand logo</span>
+                  <input type="file" accept="image/*" required onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm" />
                 </label>
                 <label className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 text-sm font-semibold">
                   Request website scraper
@@ -330,7 +354,7 @@ export default function BrandAdminSignUpPage() {
                   ) : (
                     "Website URL (optional)"
                   )}
-                  <input value={draft.website} onChange={(e) => update("website", e.target.value)} required={draft.scrapeRequested} className={inputClass} />
+                  <input type="url" value={draft.website} onChange={(e) => update("website", e.target.value)} required={draft.scrapeRequested} className={inputClass} />
                 </label>
                 <label className={`${labelClass} md:col-span-2`}>
                   Notes for review (optional)
