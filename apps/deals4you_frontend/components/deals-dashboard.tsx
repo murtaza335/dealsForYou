@@ -14,6 +14,7 @@ import {
   type Deal,
 } from "@/lib/deals";
 import { motion, AnimatePresence } from "framer-motion";
+import { HomeSlider } from "./home_slider";
 
 function SectionEmptyState({
   loading,
@@ -140,6 +141,8 @@ export function DealsDashboard() {
 
 
   return (
+    <>
+    
     <div className="relative z-10 px-6 pb-6 pt-25 sm:px-8 md:px-12 lg:px-16 xl:px-20">
       <div className="mx-auto w-full max-w-7xl">
 
@@ -294,5 +297,6 @@ export function DealsDashboard() {
       </div>
       <DealModal deal={selectedDeal} onClose={() => setSelectedDeal(null)} />
     </div>
+    </>
   );
 }

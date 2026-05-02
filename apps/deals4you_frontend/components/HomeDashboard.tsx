@@ -10,6 +10,7 @@ import {
   type ApiResponse,
   type Deal,
 } from "@/lib/deals";
+import { HomeSlider } from "@/components/home_slider";
 
 function SectionEmptyState({
   loading,
@@ -117,9 +118,15 @@ export function HomeDashboard() {
     return () => clearTimeout(timer);
   }, [isSignedIn, fetchRecommendedDeals, fetchTopDeals]);
 
+  const images = ['https://res.cloudinary.com/durv0rf9u/image/upload/v1777748574/banner1_ptoawz.png','https://res.cloudinary.com/durv0rf9u/image/upload/v1777748573/banner2_grh4tn.png','https://res.cloudinary.com/durv0rf9u/image/upload/v1777749246/banner3_wjdqp2.png']
+
 
 
   return (
+    <>
+    <div>
+    <HomeSlider images={images} />
+    </div>
     <div className="relative z-10 px-4 pb-6 pt-25 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-7xl">
 
@@ -166,5 +173,6 @@ export function HomeDashboard() {
         </div>
         <DealModal deal={selectedDeal} onClose={() => setSelectedDeal(null)} />
     </div>
+    </>
   );
 }
