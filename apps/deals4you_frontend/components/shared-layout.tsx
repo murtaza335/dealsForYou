@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useAuth } from "@clerk/nextjs";
 import { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,6 +20,7 @@ type SharedLayoutProps = {
 
 export function SharedLayout({ children }: SharedLayoutProps) {
   const pathname = usePathname();
+  const { isSignedIn } = useAuth();
 
   // Determine active tab from pathname
   const activeTab =
@@ -74,7 +75,15 @@ export function SharedLayout({ children }: SharedLayoutProps) {
         </div>
 
         <div className="absolute right-5 top-1/2 flex -translate-y-1/2 items-center sm:right-7">
-          <UserButton />
+          {isSignedIn ? (
+            <UserButton />
+          ) : (
+            <Link href="/sign-up">
+              <button className="rounded-full bg-red-600 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-red-700">
+                Sign Up
+              </button>
+            </Link>
+          )}
         </div>
       </header>
 

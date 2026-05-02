@@ -28,3 +28,13 @@ export const getTrendingBrands: RequestHandler = async (_req, res, next) => {
     next(error);
   }
 };
+
+export const trackEvent: RequestHandler = async (req, res, next) => {
+  try {
+    await analyticsService.trackEvent(req.body);
+
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+};

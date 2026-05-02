@@ -20,10 +20,7 @@ export interface Deal {
   isHot?: boolean;
   imgUrl: string;
   brandSlug: string;
-  viewsCount?: number;
-  sourceType?: "SCRAPER" | "MANUAL";
-  createdAt?: string;
-  updatedAt?: string;
+  baseUrl?: string;
 }
 
 export interface ApiResponse {

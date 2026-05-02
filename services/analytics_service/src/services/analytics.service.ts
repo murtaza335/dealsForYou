@@ -80,7 +80,7 @@ export class AnalyticsService {
     let scoreDelta = 0;
 
     switch (data.eventType) {
-      
+
       case EventType.CLICK_VIEW_DETAIL:
         scoreDelta = 1;
         break;
@@ -221,16 +221,16 @@ export class AnalyticsService {
     const deals = await this.fetchDealsFromService(trendingMetrics);
 
     const trendMap = new Map(
-   trendingMetrics.map((item) => [String(item.dealId), item.currentTrendScore])
-  );
+      trendingMetrics.map((item) => [String(item.dealId), item.currentTrendScore])
+    );
 
-  // Attach currentTrendScore to each deal
-  const enrichedDeals = deals.map((deal) => ({
-  ...deal,
-  currentTrendScore: trendMap.get(String(deal.externalId)) || 0,
-  }));
+    // Attach currentTrendScore to each deal
+    const enrichedDeals = deals.map((deal) => ({
+      ...deal,
+      currentTrendScore: trendMap.get(String(deal.externalId)) || 0,
+    }));
 
-   return enrichedDeals;
+    return enrichedDeals;
 
   }
 

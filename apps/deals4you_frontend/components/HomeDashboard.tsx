@@ -3,6 +3,7 @@
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useCallback, useEffect, useState } from "react";
 import { DealCard } from "@/components/deal-card";
+import { DealModal } from "@/components/deal-modal";
 import {
   apiBaseUrl,
   withBearerToken,
@@ -43,6 +44,8 @@ export function HomeDashboard() {
   const [loadingRecommended, setLoadingRecommended] = useState(false);
   const [loadingTop, setLoadingTop] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
 
 
   const fetchRecommendedDeals = useCallback(async () => {
@@ -142,7 +145,7 @@ export function HomeDashboard() {
             <SectionEmptyState loading={loadingRecommended} items={recommendedDeals} emptyText="No recommendations yet." />
             <div className="mt-8 grid gap-16 sm:grid-cols-2 xl:grid-cols-3">
             {recommendedDeals.map((deal) => (
-                <DealCard key={deal.externalId} deal={deal} />
+                <DealCard key={deal.externalId} deal={deal} onOpen={() => setSelectedDeal(deal)} />
             ))}
             </div>
         </section>
@@ -156,11 +159,12 @@ export function HomeDashboard() {
             <SectionEmptyState loading={loadingTop} items={topDeals} emptyText="No top deals available." />
             <div className="mt-8 grid gap-16 sm:grid-cols-2 xl:grid-cols-3">
             {topDeals.map((deal) => (
-                <DealCard key={deal.externalId} deal={deal} />
+                <DealCard key={deal.externalId} deal={deal} onOpen={() => setSelectedDeal(deal)} />
             ))}
             </div>
         </section>
         </div>
+        <DealModal deal={selectedDeal} onClose={() => setSelectedDeal(null)} />
     </div>
   );
 }
