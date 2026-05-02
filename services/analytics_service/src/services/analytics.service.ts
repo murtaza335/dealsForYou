@@ -219,7 +219,7 @@ export class AnalyticsService {
     console.log("[Analytics] Trending metrics to fetch:", trendingMetrics);
 
     const deals = await this.fetchDealsFromService(trendingMetrics);
-    
+
     const trendMap = new Map(
    trendingMetrics.map((item) => [String(item.dealId), item.currentTrendScore])
   );

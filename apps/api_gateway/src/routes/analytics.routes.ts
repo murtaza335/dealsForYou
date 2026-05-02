@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getTrendingDeals, getTrendingBrands } from "../controllers/analyticsController.js";
-import { requireAuth } from "../middlewares/requireAuth";
+import { requireAuth } from "../middlewares/requireAuth.js";
 
 const router = Router();
 router.use(requireAuth);

@@ -11,8 +11,8 @@ import {
   getRecommendedDeals,
   getTopDeals,
   getBrands,
-} from "../controllers/dealsController";
-import { requireAuth } from "../middlewares/requireAuth";
+} from "../controllers/dealsController.js";
+import { requireAuth } from "../middlewares/requireAuth.js";
 
 const router = Router();
 router.use(requireAuth);
