@@ -19,12 +19,12 @@ export interface IEvent extends Document {
 const EventSchema = new Schema<IEvent>({
   eventType: { type: String, enum: Object.values(EventType), required: true },
 
-  userId: { type: String, required: true },
+  userId: { type: String},
 
-  dealId: { type: String },
+  dealId: { type: String , required: true},
   queryText: { type: String },
 
-  brandSlug: { type: String },
+  brandSlug: { type: String , required: true},
   source: { type: String },
 
   sessionId: { type: String },  

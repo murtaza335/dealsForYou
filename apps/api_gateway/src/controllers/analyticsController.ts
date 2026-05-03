@@ -32,7 +32,7 @@ export const getTrendingBrands: RequestHandler = async (_req, res, next) => {
 
 export const trackEvent: RequestHandler = async (req, res, next) => {
   //get the session id from the request header
-  const { sessionId } = getAuth(req);
+  const sessionId = getAuth(req)?.sessionId ?? null;
 
   // adding session id to the request body
    const payload = { ...req.body,
