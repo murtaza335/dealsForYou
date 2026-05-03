@@ -20,7 +20,7 @@ function toRecommendationAction(
 }
 
 export class AnalyticsService {
-  private static readonly TRENDING_LIMIT = 5;
+  private static readonly TRENDING_LIMIT = 10;
 
   private static getDealsServiceBaseUrl() {
     return process.env.DEALS_SERVICE_URL ?? "http://localhost:5002";
@@ -174,7 +174,8 @@ export class AnalyticsService {
 
   static async getTrendingDeals() {
     const safeLimit = this.TRENDING_LIMIT;
-
+    // ALTHOUGH THE CURRENTSCORE IS NOT 0 BUT IN RESPONSE IT IS 0 MAP IT CORRECTLY IN RESPONSE
+    
     const candidates = await DealMetricsModel.find({})
       .select("dealId brandSlug viewCount externalClickCount ctr totalScore decayedScore lastEventAt updatedAt")
       .sort({ decayedScore: -1, lastEventAt: -1 })
@@ -227,7 +228,7 @@ export class AnalyticsService {
     // Attach currentTrendScore to each deal
     const enrichedDeals = deals.map((deal) => ({
       ...deal,
-      currentTrendScore: trendMap.get(String(deal.externalId)) || 0,
+      currentTrendScore: trendMap.get(String(deal.dealId)) || 0,
     }));
 
     return enrichedDeals;
