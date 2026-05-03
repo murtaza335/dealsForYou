@@ -102,7 +102,8 @@ export class AnalyticsService {
     // }
 
     const action = toRecommendationAction(data.eventType);
-    if (action) {
+    const userId = String(data.userId);
+    if (action && userId) {
       console.log(`Publishing recommendation event for action: ${action}, userId: ${data.userId}, dealId: ${data.dealId}`);
       try {
         await publishRecommendationEvent({
