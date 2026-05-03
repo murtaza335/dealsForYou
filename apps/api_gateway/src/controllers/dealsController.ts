@@ -6,24 +6,24 @@ import {
   type RecommendedDealsQuery,
 } from "../services/dealsService.js";
 
-export const getBrands: RequestHandler = async (req, res, next) => {
-  try {
-    console.log("[Gateway] GET /api/deals/brands");
+// export const getBrands: RequestHandler = async (req, res, next) => {
+//   try {
+//     console.log("[Gateway] GET /api/deals/brands");
 
-    const brands = await dealsService.getBrands();
+//     const brands = await dealsService.getBrands();
 
-    console.log("[Gateway] Brands fetched:", brands.length);
+//     console.log("[Gateway] Brands fetched:", brands.length);
 
-    res.status(200).json({
-      success: true,
-      data: brands,
-      message: "Brands fetched successfully",
-    });
-  } catch (error) {
-    console.error("[Gateway] getBrands failed:", error);
-    next(error);
-  }
-};
+//     res.status(200).json({
+//       success: true,
+//       data: brands,
+//       message: "Brands fetched successfully",
+//     });
+//   } catch (error) {
+//     console.error("[Gateway] getBrands failed:", error);
+//     next(error);
+//   }
+// };
 
 export const getFilteredDeals: RequestHandler = async (req, res, next) => {
   try {

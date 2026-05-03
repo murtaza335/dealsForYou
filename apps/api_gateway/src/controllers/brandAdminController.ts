@@ -237,27 +237,27 @@ export const listAllBrandsForAdmin: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const getBrandForAdmin: RequestHandler = async (req, res, next) => {
-  try {
-    await requireRole(req, ["APP_ADMIN"]);
-    const brand = await brandAdminService.getBrandByPublicId(String(req.params.brandId));
+// export const getBrandForAdmin: RequestHandler = async (req, res, next) => {
+//   try {
+//     await requireRole(req, ["APP_ADMIN"]);
+//     const brand = await brandAdminService.getBrandByPublicId(String(req.params.brandId));
 
-    if (!brand) {
-      return res.status(404).json({ success: false, message: "Brand not found." });
-    }
+//     if (!brand) {
+//       return res.status(404).json({ success: false, message: "Brand not found." });
+//     }
 
-    res.status(200).json({ success: true, data: brand });
-  } catch (error) {
-    next(error);
-  }
-};
+//     res.status(200).json({ success: true, data: brand });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
 
-export const getBrandDealsForAdmin: RequestHandler = async (req, res, next) => {
-  try {
-    await requireRole(req, ["APP_ADMIN"]);
-    const deals = await brandAdminService.listBrandDeals(String(req.params.brandId));
-    res.status(200).json({ success: true, data: deals });
-  } catch (error) {
-    next(error);
-  }
-};
+// export const getBrandDealsForAdmin: RequestHandler = async (req, res, next) => {
+//   try {
+//     await requireRole(req, ["APP_ADMIN"]);
+//     const deals = await brandAdminService.listBrandDeals(String(req.params.brandId));
+//     res.status(200).json({ success: true, data: deals });
+//   } catch (error) {
+//     next(error);
+//   }
+// };

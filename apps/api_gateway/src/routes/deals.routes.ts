@@ -10,7 +10,6 @@ import {
   getCurrentMoodDeals,
   getRecommendedDeals,
   getTopDeals,
-  getBrands,
 } from "../controllers/dealsController.js";
 import { requireAuth } from "../middlewares/requireAuth.js";
 
