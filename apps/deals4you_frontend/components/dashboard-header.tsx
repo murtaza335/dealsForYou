@@ -21,7 +21,7 @@ export function DashboardHeader() {
 
   return (
     <header
-      className="fixed inset-x-0 top-0 z-20 h-25"
+      className="fixed inset-x-0 top-0 z-20 h-30"
       style={{
         backgroundColor: "#000000",
         WebkitMaskImage:
@@ -35,13 +35,14 @@ export function DashboardHeader() {
           <Link
             key={tab.key}
             href={tab.href}
-            className="relative px-2 py-2 text-sm font-bold text-white transition hover:text-red-400"
+            style={{ fontFamily: "'Georgia', serif", letterSpacing: "-0.01em" }}
+            className="relative px-2 py-2 text-base font-bold italic text-white transition hover:text-red-400"
           >
             {tab.label}
             {activeTab === tab.key && (
               <motion.div
                 layoutId="active-tab-indicator"
-                className="absolute -bottom-1 left-0 h-[3px] w-full rounded-full bg-red-600"
+                className="absolute -bottom-1 left-0 h-[3px] w-full rounded-full bg-red-500"
                 transition={{ type: "spring", stiffness: 380, damping: 30 }}
               />
             )}
@@ -51,8 +52,8 @@ export function DashboardHeader() {
         <button aria-label="Search" className="ml-2 text-white transition hover:text-red-400">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
+            width="22"
+            height="22"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"

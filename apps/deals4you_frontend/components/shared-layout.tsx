@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { DashboardHeader } from "./dashboard-header";
+import Footer from "./footer";
 import { FoodBackground } from "@/components/food-background";
 
 type SharedLayoutProps = {
@@ -48,7 +49,9 @@ export function SharedLayout({ children }: SharedLayoutProps) {
           {children}
         </motion.div>
       </AnimatePresence>
+      <Footer />
     </main>
+    
     </>
   );
 }
