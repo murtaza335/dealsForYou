@@ -3,6 +3,8 @@ import { DealMetricsModel } from "../models/dealMetrics.model.js";
 import { EventType } from "../types/event.types.js";
 import { getDecayFactor } from "../utils/decay.js";
 import { publishRecommendationEvent } from "../utils/recommendationPublisher.js";
+import { undefined } from "zod";
+import { Collection } from "mongoose";
 
 function toRecommendationAction(
   eventType: EventType
@@ -103,7 +105,8 @@ export class AnalyticsService {
 
     const action = toRecommendationAction(data.eventType);
     const userId = String(data.userId);
-    if (action && userId) {
+    
+    if (action && userId!= "undefined" ) {
       console.log(`Publishing recommendation event for action: ${action}, userId: ${data.userId}, dealId: ${data.dealId}`);
       try {
         await publishRecommendationEvent({

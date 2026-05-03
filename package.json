@@ -16,8 +16,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "lightningcss": "^1.32.0",
-    "lightningcss-linux-x64-gnu": "1.32.0",
+    "lightningcss": "^1.32.0", 
     "mongodb": "^7.1.0",
     "mongoose": "^9.2.1",
     "zod": "^4.3.6"
@@ -37,6 +36,7 @@
     "start": "node dist/server.js"
   },
   "optionalDependencies": {
-    "lightningcss-win32-x64-msvc": "^1.32.0"
+    "lightningcss-win32-x64-msvc": "^1.32.0",
+    "lightningcss-linux-x64-gnu": "1.32.0"
   }
 }
