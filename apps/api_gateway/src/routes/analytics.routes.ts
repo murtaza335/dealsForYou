@@ -3,8 +3,6 @@ import { getTrendingDeals, getTrendingBrands, trackEvent } from "../controllers/
 import { requireAuth } from "../middlewares/requireAuth.js";
 
 const router = Router();
-router.use(requireAuth);
-
 router.get("/trending/deals", getTrendingDeals);
 router.get("/trending/brands", getTrendingBrands);
 router.post("/event", trackEvent);
