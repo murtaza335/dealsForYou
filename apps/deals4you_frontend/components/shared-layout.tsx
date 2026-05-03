@@ -16,42 +16,50 @@ export function SharedLayout({ children }: SharedLayoutProps) {
 
   return (
     <>
-    <DashboardHeader />
-    <main
-      className="relative w-full overflow-x-hidden overflow-y-auto"
-      style={{
-        background: "#000000",
-        height: "100vh",
-        perspective: "10px",
-      }}
-    >
-      
-
-      {/* ── Parallax background pattern ── */}
-      <FoodBackground
-        blocks={10}
+      <DashboardHeader />
+      <main
+        className="relative w-full"
         style={{
-          transform: "translateZ(-25px) scale(3.5)",
-          transformOrigin: "top",
+          background: "#000000",
+          height: "100vh",
+          overflow: "hidden", // ← clip everything, handle scroll inside
         }}
-      />
+      >
+        {/* Background: clipped, never scrolls */}
+        <FoodBackground
+          style={{
+            transform: "translateZ(0) scale(1)", // drop the parallax, or keep below
+            transformOrigin: "top center",
+            position: "fixed", // ← fixed so it never affects scroll height
+            inset: 0,
+          }}
+        />
 
-      {/* ── Animated page content ── */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={pathname}
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="relative z-10"
+        {/* Scrollable content area */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 10,
+            height: "100vh",
+            overflowY: "auto",
+            overflowX: "hidden",
+          }}
         >
-          {children}
-        </motion.div>
-      </AnimatePresence>
-      <Footer />
-    </main>
-    
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+          <Footer />
+        </div>
+      </main>
+
     </>
   );
 }

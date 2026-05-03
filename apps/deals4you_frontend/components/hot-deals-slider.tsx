@@ -39,15 +39,15 @@ export function HotDealsSlider({
     const sliderRef = useRef<HTMLDivElement | null>(null);
     const showSkeleton = loading && deals.length === 0;
 
-    const handleWheelScroll = (event: WheelEvent<HTMLDivElement>) => {
-        const container = event.currentTarget;
-        if (event.deltaY === 0) {
-            return;
-        }
+    // const handleWheelScroll = (event: WheelEvent<HTMLDivElement>) => {
+    //     const container = event.currentTarget;
+    //     if (event.deltaY === 0) {
+    //         return;
+    //     }
 
-        event.preventDefault();
-        container.scrollLeft += event.deltaY;
-    };
+    //     event.preventDefault();
+    //     container.scrollLeft += event.deltaY;
+    // };
 
     const scrollByAmount = (distance: number) => {
         sliderRef.current?.scrollBy({ left: distance, behavior: "smooth" });
@@ -113,7 +113,6 @@ export function HotDealsSlider({
 
                 <div
                     ref={sliderRef}
-                    onWheel={handleWheelScroll}
                     className="mx-10 flex gap-6 overflow-x-auto overflow-y-hidden scroll-smooth [&::-webkit-scrollbar]:hidden"
                     style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                 >

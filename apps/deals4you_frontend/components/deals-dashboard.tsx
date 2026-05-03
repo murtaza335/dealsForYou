@@ -5,6 +5,7 @@ import { UserButton, SignUpButton, useAuth, useUser } from "@clerk/nextjs";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { DealCard } from "@/components/deal-card";
 import { DealModal } from "@/components/deal-modal";
+import { DealSkeleton } from "@/components/deal-skeleton";
 import {
   apiBaseUrl,
   buildQuery,
@@ -26,7 +27,13 @@ function SectionEmptyState({
   emptyText: string;
 }>) {
   if (loading) {
-    return <p className="mt-4 text-sm text-slate-500">Loading...</p>;
+    return (
+      <div className="mt-8 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <DealSkeleton key={index} />
+        ))}
+      </div>
+    );
   }
 
   if (items.length === 0) {
@@ -134,7 +141,7 @@ export function DealsDashboard() {
   return (
     <>
     
-    <div className="relative z-10 px-6 pb-6 pt-25 sm:px-8 md:px-12 lg:px-16 xl:px-20">
+    <div className="relative z-10 min-h-screen px-6 pb-6 pt-25 sm:px-8 md:px-12 lg:px-16 xl:px-20">
       <div className="mx-auto w-full max-w-7xl">
 
         {errorMessage ? (
