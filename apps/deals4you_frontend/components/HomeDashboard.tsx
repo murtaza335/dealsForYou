@@ -2,7 +2,6 @@
 
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useCallback, useEffect, useState } from "react";
-import { DealCard } from "@/components/deal-card";
 import { DealModal } from "@/components/deal-modal";
 import {
   apiBaseUrl,
@@ -11,28 +10,8 @@ import {
   type Deal,
 } from "@/lib/deals";
 import { HomeSlider } from "@/components/home_slider";
-
-function SectionEmptyState({
-  loading,
-  items,
-  emptyText,
-}: Readonly<{
-  loading: boolean;
-  items: Deal[];
-  emptyText: string;
-}>) {
-  if (loading) {
-    return <p className="mt-4 text-sm text-slate-500">Loading...</p>;
-  }
-
-  if (items.length === 0) {
-    return <p className="mt-4 text-sm text-slate-500">{emptyText}</p>;
-  }
-
-  return null;
-}
-
-
+import { RecommendDealsSlider } from "@/components/recommend-deals-slider";
+import { HotDealsSlider } from "@/components/hot-deals-slider";
 
 export function HomeDashboard() {
   const { user } = useUser();
@@ -127,49 +106,21 @@ export function HomeDashboard() {
     <div>
     <HomeSlider images={images} />
     </div>
-    <div className="relative z-10 px-4 pb-6 pt-25 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-7xl">
+    <div className="relative z-10 w-full px-4 pb-6 pt-25 sm:px-6 lg:px-8">
+      <div className="w-full max-w-none">
 
-        {errorMessage ? (
-            <p className="mt-6 rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {errorMessage}
-            </p>
-        ) : null}
+        <RecommendDealsSlider
+          isSignedIn={isSignedIn ?? false}
+          loading={loadingRecommended}
+          deals={recommendedDeals}
+          onDealOpen={setSelectedDeal}
+        />
 
-        <section className="mt-6">
-            <div className="flex items-center justify-between gap-4">
-            <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-yellow-500">Recommended</p>
-                <h2 className="mt-2 font-display text-2xl font-bold text-yellow-500">Deals matched to your activity</h2>
-            </div>
-            {!isSignedIn ? (
-                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
-                Sign in required
-                </span>
-            ) : null}
-            </div>
-
-            <SectionEmptyState loading={loadingRecommended} items={recommendedDeals} emptyText="No recommendations yet." />
-            <div className="mt-8 grid gap-16 sm:grid-cols-2 xl:grid-cols-3">
-            {recommendedDeals.map((deal) => (
-                <DealCard key={deal.externalId} deal={deal} onOpen={() => setSelectedDeal(deal)} />
-            ))}
-            </div>
-        </section>
-
-        <section className="mt-6">
-            <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-yellow-500">Top deals</p>
-            <h2 className="mt-2 font-display text-2xl font-bold text-yellow-500">Popular picks right now</h2>
-            </div>
-
-            <SectionEmptyState loading={loadingTop} items={topDeals} emptyText="No top deals available." />
-            <div className="mt-8 grid gap-16 sm:grid-cols-2 xl:grid-cols-3">
-            {topDeals.map((deal) => (
-                <DealCard key={deal.externalId} deal={deal} onOpen={() => setSelectedDeal(deal)} />
-            ))}
-            </div>
-        </section>
+        <HotDealsSlider
+          loading={loadingTop}
+          deals={topDeals}
+          onDealOpen={setSelectedDeal}
+        />
         </div>
         <DealModal deal={selectedDeal} onClose={() => setSelectedDeal(null)} />
     </div>

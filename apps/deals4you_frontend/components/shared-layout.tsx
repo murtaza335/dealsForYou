@@ -19,7 +19,7 @@ export function SharedLayout({ children }: SharedLayoutProps) {
     <main
       className="relative w-full overflow-x-hidden overflow-y-auto"
       style={{
-        background: "linear-gradient(180deg, #151515 0%, #232323 100%)",
+        background: "#000000",
         height: "100vh",
         perspective: "10px",
       }}
