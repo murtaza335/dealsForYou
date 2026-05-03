@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useClerk, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { apiBaseUrl, readJsonResponse, uploadImage } from "@/lib/deals";
@@ -273,9 +273,12 @@ export default function BrandAdminSignUpPage() {
   const [uploadedLogoUrl, setUploadedLogoUrl] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [messageTone, setMessageTone] = useState<MessageTone>("error");
+  const [emailStatus, setEmailStatus] = useState<"idle" | "checking" | "taken">("idle");
+  const [emailMessage, setEmailMessage] = useState<string | null>(null);
   const [showVerification, setShowVerification] = useState(false);
   const [verifyCode, setVerifyCode] = useState("");
   const [isWorking, setIsWorking] = useState(false);
+  const emailCheckId = useRef(0);
 
   const update = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((curr) => ({ ...curr, [key]: value }));
@@ -288,6 +291,69 @@ export default function BrandAdminSignUpPage() {
   const showSuccess = (value: string) => {
     setMessageTone("success");
     setMessage(value);
+  };
+
+  const resetEmailAvailability = () => {
+    setEmailStatus("idle");
+    setEmailMessage(null);
+  };
+
+  const isEmailTakenError = (error: unknown) => {
+    const msg = errorMessage(error, "").toLowerCase();
+    return (
+      msg.includes("already") ||
+      msg.includes("taken") ||
+      msg.includes("exists") ||
+      msg.includes("identifier")
+    );
+  };
+
+  const clearClerkSignUpDraft = async () => {
+    const maybeReset = (clerk.client.signUp as unknown as { reset?: () => Promise<void> }).reset;
+    if (typeof maybeReset === "function") {
+      try {
+        await maybeReset.call(clerk.client.signUp);
+      } catch {
+        // Ignore cleanup failures.
+      }
+    }
+  };
+
+  const checkEmailAvailability = async (rawEmail: string) => {
+    const email = rawEmail.trim();
+
+    if (!email) {
+      resetEmailAvailability();
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      resetEmailAvailability();
+      return;
+    }
+
+    const requestId = ++emailCheckId.current;
+    setEmailStatus("checking");
+    setEmailMessage(null);
+
+    try {
+      await clerk.client.signUp.create({ emailAddress: email });
+
+      if (requestId !== emailCheckId.current) return;
+
+      resetEmailAvailability();
+    } catch (error) {
+      if (requestId !== emailCheckId.current) return;
+
+      if (isEmailTakenError(error)) {
+        setEmailStatus("taken");
+        setEmailMessage("Email Already in use");
+      } else {
+        resetEmailAvailability();
+      }
+    } finally {
+      void clearClerkSignUpDraft();
+    }
   };
 
   // ── Validation ──────────────────────────────────────────────────────────────
@@ -303,6 +369,7 @@ export default function BrandAdminSignUpPage() {
     )
       return "Please complete all required fields.";
     if (!isValidEmail(draft.email)) return "Enter a valid email address.";
+    if (emailStatus === "taken") return "This email is already taken.";
     if (draft.password.length < 8)
       return "Password must be at least 8 characters.";
     if (!isValidPhone(draft.phone)) return "Enter a valid phone number.";
@@ -525,10 +592,22 @@ export default function BrandAdminSignUpPage() {
           <input
             type="email"
             className={inputClass}
+            aria-invalid={emailStatus === "taken"}
             placeholder="jane@brand.com"
             value={draft.email}
-            onChange={(e) => update("email", e.target.value)}
+            onChange={(e) => {
+              update("email", e.target.value);
+              resetEmailAvailability();
+            }}
+            onBlur={() => {
+              void checkEmailAvailability(draft.email);
+            }}
           />
+          {emailStatus === "checking" ? (
+            <p className="text-xs text-white/30">Checking email availability...</p>
+          ) : emailMessage ? (
+            <p className="text-xs text-red-400">{emailMessage}</p>
+          ) : null}
         </Field>
         <Field label="Password" required>
           <input
