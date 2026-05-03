@@ -63,11 +63,8 @@ export function DealsDashboard() {
         query,
         brand,
       });
-      const token = await getToken();
 
-      const response = await fetch(`${apiBaseUrl}/api/deals/filtered?${queryParam}`, {
-        headers: withBearerToken(token),
-      });
+      const response = await fetch(`${apiBaseUrl}/api/deals/filtered?${queryParam}`);
       if (!response.ok) {
         throw new Error("Could not fetch filtered deals.");
       }
@@ -77,13 +74,13 @@ export function DealsDashboard() {
       const fetchedDeals = payload.data ?? [];
       setFilteredDeals(fetchedDeals);
 
-      if (query.trim() && userId) {
+      if (query.trim()) {
         fetch(`${apiBaseUrl}/api/analytics/event`, {
           method: "POST",
-          headers: withBearerToken(token, { "Content-Type": "application/json" }),
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             eventType: "SEARCH_QUERY",
-            userId: userId,
+            ...(userId && { userId }),
             dealId: fetchedDeals.map((d: Deal) => d.dealId).join(","),
             brandSlug: fetchedDeals.map((d: Deal) => d.brandSlug).join(","),
             queryText: query,
@@ -96,14 +93,12 @@ export function DealsDashboard() {
     } finally {
       setLoadingFiltered(false);
     }
-  }, [brand, maxPrice, query, getToken]);
+  }, [brand, maxPrice, query]);
 
   const fetchBrands = useCallback(async () => {
     try {
-      const token = await getToken();
-      const response = await fetch(`${apiBaseUrl}/api/deals/filters/brands`, {
-        headers: withBearerToken(token),
-      });
+
+      const response = await fetch(`${apiBaseUrl}/api/deals/filters/brands`);
       if (!response.ok) {
         throw new Error("Could not fetch brands.");
       }
@@ -114,19 +109,15 @@ export function DealsDashboard() {
     } catch (error) {
       console.error("Error fetching brands:", error);
     }
-  }, [getToken]);
+  }, []);
 
   useEffect(() => {
-    if (!isSignedIn) return;
     void fetchFilteredDeals();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn]);
+  }, []);
 
   useEffect(() => {
-    if (!isSignedIn) return;
     void fetchBrands();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn]);
+  }, []);
 
   const onFilterSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

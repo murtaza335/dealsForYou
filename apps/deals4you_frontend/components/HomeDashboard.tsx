@@ -65,10 +65,7 @@ export function HomeDashboard() {
     setErrorMessage(null);
 
     try {
-      const token = await getToken();
-      const response = await fetch(`${apiBaseUrl}/api/analytics/trending/deals`, {
-        headers: withBearerToken(token),
-      });
+      const response = await fetch(`${apiBaseUrl}/api/analytics/trending/deals`);
       if (!response.ok) {
         throw new Error("Could not fetch top deals.");
       }
@@ -82,12 +79,9 @@ export function HomeDashboard() {
     } finally {
       setLoadingTop(false);
     }
-  }, [getToken]);
+  }, []);
 
   useEffect(() => {
-    if (!isSignedIn) {
-      return;
-    }
 
     const timer = setTimeout(() => {
       void fetchRecommendedDeals();
@@ -95,7 +89,7 @@ export function HomeDashboard() {
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [isSignedIn, fetchRecommendedDeals, fetchTopDeals]);
+  }, [ fetchRecommendedDeals, fetchTopDeals]);
 
   const images = ['https://res.cloudinary.com/durv0rf9u/image/upload/v1777748574/banner1_ptoawz.png','https://res.cloudinary.com/durv0rf9u/image/upload/v1777748573/banner2_grh4tn.png','https://res.cloudinary.com/durv0rf9u/image/upload/v1777749246/banner3_wjdqp2.png']
 
