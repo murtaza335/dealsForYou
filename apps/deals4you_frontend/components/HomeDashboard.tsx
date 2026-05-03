@@ -14,6 +14,8 @@ import { RecommendDealsSlider } from "@/components/recommend-deals-slider";
 import { HotDealsSlider } from "@/components/hot-deals-slider";
 import { JoinAsBrandSection } from "./join-as-brand-section";
 
+const RECOMMENDED_DEALS_LIMIT = 12;
+
 export function HomeDashboard() {
   const { user } = useUser();
   const { isSignedIn, getToken } = useAuth();
@@ -41,7 +43,7 @@ export function HomeDashboard() {
     try {
       const token = await getToken();
       const response = await fetch(
-        `${apiBaseUrl}/api/deals/recommended?userId=${encodeURIComponent(userId)}&limit=6`,
+        `${apiBaseUrl}/api/deals/recommended?userId=${encodeURIComponent(userId)}&limit=${RECOMMENDED_DEALS_LIMIT}`,
         {
           headers: withBearerToken(token),
         }

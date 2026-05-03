@@ -24,7 +24,7 @@ export function DealModal({ deal, onClose }: DealModalProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          eventType: "CLICK_EXTERNAL_LINK",
+          eventType: "EXTERNAL_LINK",
           ...(userId && { userId }),
           dealId: deal.dealId,
           brandSlug: deal.brandSlug,

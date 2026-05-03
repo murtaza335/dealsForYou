@@ -9,6 +9,8 @@ export interface CurrentMoodDealsQuery {
   limit?: number;
 }
 
+const DEFAULT_RECOMMENDATION_LIMIT = 12;
+
 class DealsService {
   private getDealsServiceBaseUrl() {
     return process.env.deals_url ?? process.env.DEALS_URL ?? "http://localhost:5002";
@@ -77,6 +79,10 @@ class DealsService {
     return response.json() as Promise<{ recommendedDealIds?: string[] }>;
   }
 
+  private resolveRecommendationLimit(limit?: number): number {
+    return Number.isFinite(limit) && limit && limit > 0 ? Math.floor(limit) : DEFAULT_RECOMMENDATION_LIMIT;
+  }
+
   async getFilteredDeals(query: Record<string, unknown>) {
     const payload = await this.fetchFromDealsService("/api/deals", query);
     return payload.data ?? [];
@@ -142,7 +148,7 @@ class DealsService {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        limit: query.limit,
+        limit: this.resolveRecommendationLimit(query.limit),
       }),
     });
 
@@ -168,7 +174,7 @@ class DealsService {
       `/api/recommendations/current-mood/${encodeURIComponent(query.userId)}`,
       {
         sessionId: query.sessionId,
-        limit: query.limit ? String(query.limit) : undefined,
+        limit: String(this.resolveRecommendationLimit(query.limit)),
       }
     );
 
