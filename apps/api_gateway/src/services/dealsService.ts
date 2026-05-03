@@ -29,10 +29,24 @@ class DealsService {
         continue;
       }
 
+      if (typeof value === "number" && Number.isFinite(value)) {
+        searchParams.append(key, String(value));
+        continue;
+      }
+
+      if (typeof value === "boolean") {
+        searchParams.append(key, String(value));
+        continue;
+      }
+
       if (Array.isArray(value)) {
         for (const item of value) {
           if (typeof item === "string" && item.trim().length > 0) {
             searchParams.append(key, item.trim());
+          } else if (typeof item === "number" && Number.isFinite(item)) {
+            searchParams.append(key, String(item));
+          } else if (typeof item === "boolean") {
+            searchParams.append(key, String(item));
           }
         }
       }
@@ -183,8 +197,17 @@ class DealsService {
   }
 
   async getTopDeals(_limit?: number) {
-    
-    return [];
+    const limit = Number.isFinite(_limit) && _limit && _limit > 0 ? Math.floor(_limit) : 8;
+
+    const payload = await this.fetchFromDealsService("/api/deals", {
+      limit,
+      sortBy: "viewsCount",
+      sortOrder: "desc",
+      isActive: true,
+      isExpired: false,
+    });
+
+    return payload.data ?? [];
   }
 
   async getBrandsInfo() {

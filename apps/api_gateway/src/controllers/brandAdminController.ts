@@ -2,6 +2,7 @@ import type { RequestHandler } from "express";
 import { getAuth } from "@clerk/express";
 import { brandAdminService } from "../services/brandAdminService.js";
 import { clerkAdminService } from "../services/clerkAdminService.js";
+import { dealsService } from "../services/dealsService.js";
 import { userDomainService } from "../services/userDomainService.js";
 
 type HttpError = Error & { statusCode?: number };
@@ -189,6 +190,73 @@ export const deleteEndUser: RequestHandler = async (req, res, next) => {
     const clerkUser = await clerkAdminService.deleteUser(user.clerkUserId);
     const deletedUser = await userDomainService.deleteUser(userId);
     res.status(200).json({ success: true, data: { user: deletedUser, clerkUser } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAppAdminOverview: RequestHandler = async (req, res, next) => {
+  try {
+    await requireRole(req, ["APP_ADMIN"]);
+
+    const [allUsers, endUsers, brandAdmins, appAdmins, brands, pendingBrands, topDeals] = await Promise.all([
+      userDomainService.listUsers(),
+      userDomainService.listUsers("END_USER"),
+      userDomainService.listUsers("BRAND_ADMIN"),
+      userDomainService.listUsers("APP_ADMIN"),
+      brandAdminService.listBrands(),
+      brandAdminService.listPendingBrands(),
+      dealsService.getTopDeals(8),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers: allUsers.length,
+        endUsers: endUsers.length,
+        brandAdmins: brandAdmins.length,
+        appAdmins: appAdmins.length,
+        totalBrands: brands.length,
+        pendingBrands: pendingBrands.length,
+        approvedBrands: brands.filter((brand: { approvalStatus?: string }) => brand.approvalStatus === "APPROVED").length,
+        topDeals,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const listAllBrandsForAdmin: RequestHandler = async (req, res, next) => {
+  try {
+    await requireRole(req, ["APP_ADMIN"]);
+    const brands = await brandAdminService.listBrands();
+    res.status(200).json({ success: true, data: brands });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getBrandForAdmin: RequestHandler = async (req, res, next) => {
+  try {
+    await requireRole(req, ["APP_ADMIN"]);
+    const brand = await brandAdminService.getBrandByPublicId(String(req.params.brandId));
+
+    if (!brand) {
+      return res.status(404).json({ success: false, message: "Brand not found." });
+    }
+
+    res.status(200).json({ success: true, data: brand });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getBrandDealsForAdmin: RequestHandler = async (req, res, next) => {
+  try {
+    await requireRole(req, ["APP_ADMIN"]);
+    const deals = await brandAdminService.listBrandDeals(String(req.params.brandId));
+    res.status(200).json({ success: true, data: deals });
   } catch (error) {
     next(error);
   }
