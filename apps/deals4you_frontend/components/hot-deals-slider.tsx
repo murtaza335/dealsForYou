@@ -2,6 +2,7 @@
 
 import { useRef, type WheelEvent } from "react";
 import { DealCard } from "@/components/deal-card";
+import { DealSkeleton } from "@/components/deal-skeleton";
 import { type Deal } from "@/lib/deals";
 
 interface HotDealsSliderProps {
@@ -20,7 +21,7 @@ function SectionEmptyState({
     emptyText: string;
 }>) {
     if (loading) {
-        return <p className="mt-2 text-sm text-slate-400">Loading...</p>;
+        return null;
     }
 
     if (items.length === 0) {
@@ -36,6 +37,7 @@ export function HotDealsSlider({
     onDealOpen,
 }: HotDealsSliderProps) {
     const sliderRef = useRef<HTMLDivElement | null>(null);
+    const showSkeleton = loading && deals.length === 0;
 
     const handleWheelScroll = (event: WheelEvent<HTMLDivElement>) => {
         const container = event.currentTarget;
@@ -50,6 +52,8 @@ export function HotDealsSlider({
     const scrollByAmount = (distance: number) => {
         sliderRef.current?.scrollBy({ left: distance, behavior: "smooth" });
     };
+
+    const skeletonCards = Array.from({ length: 4 });
 
     return (
         <section className="py-4">
@@ -88,22 +92,24 @@ export function HotDealsSlider({
                 </h2>
             </div>
 
-            <SectionEmptyState loading={loading} items={deals} emptyText="No top deals available." />
+            <SectionEmptyState loading={showSkeleton} items={deals} emptyText="No top deals available." />
 
             <div className="relative mt-4">
                 <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-black/70 via-black/35 to-transparent backdrop-blur-[1px]" />
                 <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-black/70 via-black/35 to-transparent backdrop-blur-[1px]" />
 
-                <button
-                    type="button"
-                    onClick={() => scrollByAmount(-360)}
-                    className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/30 bg-transparent p-2 text-white/90 transition hover:border-white/60 hover:text-white"
-                    aria-label="Scroll hot deals left"
-                >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
+                {!showSkeleton && (
+                    <button
+                        type="button"
+                        onClick={() => scrollByAmount(-360)}
+                        className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/30 bg-transparent p-2 text-white/90 transition hover:border-white/60 hover:text-white"
+                        aria-label="Scroll hot deals left"
+                    >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                )}
 
                 <div
                     ref={sliderRef}
@@ -111,23 +117,31 @@ export function HotDealsSlider({
                     className="mx-10 flex gap-6 overflow-x-auto overflow-y-hidden scroll-smooth [&::-webkit-scrollbar]:hidden"
                     style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                 >
-                    {deals.map((deal) => (
-                        <div key={deal.externalId} className="w-[320px] shrink-0">
-                            <DealCard deal={deal} onOpen={() => onDealOpen(deal)} />
-                        </div>
-                    ))}
+                    {showSkeleton
+                        ? skeletonCards.map((_, index) => (
+                            <div key={index} className="w-[320px] shrink-0">
+                                <DealSkeleton />
+                            </div>
+                        ))
+                        : deals.map((deal) => (
+                            <div key={deal.externalId} className="w-[320px] shrink-0">
+                                <DealCard deal={deal} onOpen={() => onDealOpen(deal)} />
+                            </div>
+                        ))}
                 </div>
 
-                <button
-                    type="button"
-                    onClick={() => scrollByAmount(360)}
-                    className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/30 bg-transparent p-2 text-white/90 transition hover:border-white/60 hover:text-white"
-                    aria-label="Scroll hot deals right"
-                >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                </button>
+                {!showSkeleton && (
+                    <button
+                        type="button"
+                        onClick={() => scrollByAmount(360)}
+                        className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/30 bg-transparent p-2 text-white/90 transition hover:border-white/60 hover:text-white"
+                        aria-label="Scroll hot deals right"
+                    >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                )}
             </div>
         </section>
     );

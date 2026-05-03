@@ -103,16 +103,18 @@ export function HomeDashboard() {
     <div className="relative z-10 w-full px-4 pb-6 pt-25 sm:px-6 lg:px-8">
       <div className="w-full max-w-none">
 
-        <RecommendDealsSlider
-          isSignedIn={isSignedIn ?? false}
-          loading={loadingRecommended}
-          deals={recommendedDeals}
-          onDealOpen={setSelectedDeal}
-        />
+        
 
         <HotDealsSlider
           loading={loadingTop}
           deals={topDeals}
+          onDealOpen={setSelectedDeal}
+        />
+
+        <RecommendDealsSlider
+          isSignedIn={isSignedIn ?? false}
+          loading={loadingRecommended}
+          deals={recommendedDeals}
           onDealOpen={setSelectedDeal}
         />
         </div>
