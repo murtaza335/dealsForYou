@@ -94,7 +94,7 @@ export function HotDealsSlider({
 
             <SectionEmptyState loading={showSkeleton} items={deals} emptyText="No top deals available." />
 
-            <div className="relative mt-4">
+            <div className="relative mt-4 min-h-[420px]">
                 <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-black/70 via-black/35 to-transparent backdrop-blur-[1px]" />
                 <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-black/70 via-black/35 to-transparent backdrop-blur-[1px]" />
 

@@ -12,6 +12,7 @@ import {
 import { HomeSlider } from "@/components/home_slider";
 import { RecommendDealsSlider } from "@/components/recommend-deals-slider";
 import { HotDealsSlider } from "@/components/hot-deals-slider";
+import { JoinAsBrandSection } from "./join-as-brand-section";
 
 export function HomeDashboard() {
   const { user } = useUser();
@@ -101,7 +102,7 @@ export function HomeDashboard() {
     <HomeSlider images={images} />
     </div>
     <div className="relative z-10 w-full px-4 pb-6 pt-25 sm:px-6 lg:px-8">
-      <div className="w-full max-w-none">
+      <div className="w-full max-w-none space-y-12 lg:space-y-16">
 
         
 
@@ -117,6 +118,9 @@ export function HomeDashboard() {
           deals={recommendedDeals}
           onDealOpen={setSelectedDeal}
         />
+
+        <JoinAsBrandSection></JoinAsBrandSection>
+
         </div>
         <DealModal deal={selectedDeal} onClose={() => setSelectedDeal(null)} />
     </div>

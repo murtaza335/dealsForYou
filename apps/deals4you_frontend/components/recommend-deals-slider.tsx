@@ -58,7 +58,7 @@ export function RecommendDealsSlider({
   const skeletonCards = Array.from({ length: 4 });
 
   return (
-    <section className="py-4">
+    <section className="py-4 min-h">
       <div className="flex items-center justify-between px-10">
   <div>
     {/* <div className="mb-2 flex items-center gap-2">
@@ -110,7 +110,7 @@ export function RecommendDealsSlider({
         emptyText="No recommendations yet."
       /> */}
 
-      <div className="relative mt-4">
+      <div className="relative mt-4 min-h-[420px]">
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-black/70 via-black/35 to-transparent backdrop-blur-[1px]" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-black/70 via-black/35 to-transparent backdrop-blur-[1px]" />
 

@@ -12,6 +12,7 @@ import appAdminRoutes from "./routes/appAdmin.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import { notFoundHandler } from "./middlewares/notFoundHandler.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
+import brandRoutes from "./routes/brand.routes.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: resolve(__dirname, "../.env") });
@@ -37,6 +38,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/brand-admin", brandAdminRoutes);
 app.use("/api/app-admin", appAdminRoutes);
 app.use("/api/uploads", uploadRoutes);
+app.use("/api/brands", brandRoutes);// brand routes added
 
 // Error middlewares
 app.use(notFoundHandler);

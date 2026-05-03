@@ -181,7 +181,7 @@ class DealsService {
     return [];
   }
 
-  async getBrands() {
+  async getBrandsInfo() {
     const dealsServiceBaseUrl =
       process.env.deals_url ?? process.env.DEALS_URL ?? "http://localhost:5002";
 
