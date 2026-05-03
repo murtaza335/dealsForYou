@@ -26,5 +26,5 @@ export const env = {
   EMBEDDING_VERSION: Number(process.env.EMBEDDING_VERSION || 1),
   VECTOR_INDEX_NAME: process.env.VECTOR_INDEX_NAME || "deal_embedding_index",
   RECOMMENDATION_CANDIDATES: Number(process.env.RECOMMENDATION_CANDIDATES || 100),
-  RECOMMENDATION_LIMIT: Number(process.env.RECOMMENDATION_LIMIT || 20),
+  RECOMMENDATION_LIMIT: Number(process.env.RECOMMENDATION_LIMIT || 12),
 };

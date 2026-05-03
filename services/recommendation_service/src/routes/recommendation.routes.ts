@@ -44,7 +44,7 @@ router.get("/recommendations/current-mood/:userId", async (req, res) => {
       return res.status(400).json({ error: "sessionId is required" });
     }
 
-    const limit = parseLimit(req.query.limit, 6);
+    const limit = parseLimit(req.query.limit, env.RECOMMENDATION_LIMIT);
     const moodProfile = await UserMoodProfileModel.findOne({ userId, sessionId }).lean();
     const sourceDealIds = moodProfile?.sourceDealIds ?? [];
 
@@ -105,7 +105,7 @@ router.get("/recommendations/current-mood/:userId", async (req, res) => {
 router.post("/recommendations/refresh/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    const limit = Number(req.body?.limit || env.RECOMMENDATION_LIMIT);
+    const limit = parseLimit(req.body?.limit, env.RECOMMENDATION_LIMIT);
     const numCandidates = Number(req.body?.numCandidates || env.RECOMMENDATION_CANDIDATES);
 
     const profile = await rebuildUserProfile(userId);
