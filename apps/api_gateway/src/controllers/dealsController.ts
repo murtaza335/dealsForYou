@@ -1,4 +1,5 @@
 import { RequestHandler } from "express";
+import { getAuth } from "@clerk/express";
 import {
   dealsService,
   type CurrentMoodDealsQuery,
@@ -141,6 +142,7 @@ export const getDealById: RequestHandler = async (req, res, next) => {
 
 export const getRecommendedDeals: RequestHandler = async (req, res, next) => {
   try {
+    const auth = getAuth(req);
     const query: RecommendedDealsQuery = {
       userId: typeof req.query.userId === "string" ? req.query.userId : undefined,
       limit:
@@ -161,9 +163,10 @@ export const getRecommendedDeals: RequestHandler = async (req, res, next) => {
 
 export const getCurrentMoodDeals: RequestHandler = async (req, res, next) => {
   try {
+    const auth = getAuth(req);
     const query: CurrentMoodDealsQuery = {
       userId: typeof req.query.userId === "string" ? req.query.userId : undefined,
-      sessionId: typeof req.query.sessionId === "string" ? req.query.sessionId : undefined,
+      sessionId: auth.sessionId ?? undefined,
       limit:
         typeof req.query.limit === "string" ? Number(req.query.limit) : undefined,
     };

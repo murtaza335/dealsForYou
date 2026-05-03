@@ -42,6 +42,7 @@ export function HomeDashboard() {
 
     try {
       const token = await getToken();
+      console.log(token)
       const response = await fetch(
         `${apiBaseUrl}/api/deals/recommended?userId=${encodeURIComponent(userId)}&limit=${RECOMMENDED_DEALS_LIMIT}`,
         {
