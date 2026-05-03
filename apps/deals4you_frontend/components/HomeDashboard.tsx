@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth, useUser } from "@clerk/nextjs";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { DealModal } from "@/components/deal-modal";
 import {
@@ -13,6 +14,7 @@ import { HomeSlider } from "@/components/home_slider";
 import { RecommendDealsSlider } from "@/components/recommend-deals-slider";
 import { HotDealsSlider } from "@/components/hot-deals-slider";
 import { JoinAsBrandSection } from "./join-as-brand-section";
+import { LoginToPersonalizeSection } from "./login-to-personalize-section";
 
 export function HomeDashboard() {
   const { user } = useUser();
@@ -90,40 +92,76 @@ export function HomeDashboard() {
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [ fetchRecommendedDeals, fetchTopDeals]);
+  }, [fetchRecommendedDeals, fetchTopDeals]);
 
-  const images = ['https://res.cloudinary.com/durv0rf9u/image/upload/v1777748574/banner1_ptoawz.png','https://res.cloudinary.com/durv0rf9u/image/upload/v1777748573/banner2_grh4tn.png','https://res.cloudinary.com/durv0rf9u/image/upload/v1777749246/banner3_wjdqp2.png']
+  const images = ['https://res.cloudinary.com/durv0rf9u/image/upload/v1777748574/banner1_ptoawz.png', 'https://res.cloudinary.com/durv0rf9u/image/upload/v1777748573/banner2_grh4tn.png', 'https://res.cloudinary.com/durv0rf9u/image/upload/v1777749246/banner3_wjdqp2.png']
 
 
 
   return (
     <>
-    <div>
-    <HomeSlider images={images} />
-    </div>
-    <div className="relative z-10 w-full px-4 pb-6 pt-25 sm:px-6 lg:px-8">
-      <div className="w-full max-w-none space-y-12 lg:space-y-16">
+      <div>
+        <HomeSlider images={images} />
+      </div>
+      <div className="relative z-10 w-full px-4 pb-6 pt-25 sm:px-6 lg:px-8">
+        <div className="w-full max-w-none space-y-12 lg:space-y-16">
 
-        
 
-        <HotDealsSlider
-          loading={loadingTop}
-          deals={topDeals}
-          onDealOpen={setSelectedDeal}
-        />
 
-        <RecommendDealsSlider
-          isSignedIn={isSignedIn ?? false}
-          loading={loadingRecommended}
-          deals={recommendedDeals}
-          onDealOpen={setSelectedDeal}
-        />
+          <HotDealsSlider
+            loading={loadingTop}
+            deals={topDeals}
+            onDealOpen={setSelectedDeal}
+          />
 
-        <JoinAsBrandSection></JoinAsBrandSection>
+          <div className="flex justify-center pt-2">
+            <Link
+              href="/deals"
+              className="group inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 px-6 py-3 text-sm font-semibold text-black shadow-lg shadow-amber-500/20 transition duration-300 hover:-translate-y-0.5 hover:shadow-amber-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              aria-label="Dive deeper into deals"
+            >
+              {/* Pizza icon */}
+              <span className="relative inline-flex items-center justify-center">
+                <span className="text-base transition-transform duration-500 group-hover:-translate-y-1 group-hover:rotate-180">
+                  🍕
+                </span>
+                {/* subtle glow pulse */}
+                <span className="absolute inset-0 rounded-full bg-amber-300/30 blur-md opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              </span>
+
+              <span>Explore All Deals</span>
+
+              <svg
+                className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
+                viewBox="0 0 20 20"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M7.5 5.5L12 10l-4.5 4.5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </Link>
+          </div>
+
+          {isSignedIn && <RecommendDealsSlider
+            isSignedIn={isSignedIn ?? false}
+            loading={loadingRecommended}
+            deals={recommendedDeals}
+            onDealOpen={setSelectedDeal}
+          />}
+
+          {!isSignedIn && <LoginToPersonalizeSection />}
+
+          <JoinAsBrandSection></JoinAsBrandSection>
 
         </div>
         <DealModal deal={selectedDeal} onClose={() => setSelectedDeal(null)} />
-    </div>
+      </div>
     </>
   );
 }
