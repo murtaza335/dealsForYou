@@ -2,7 +2,6 @@
 
 import { formatPrice, type Deal } from "@/lib/deals";
 import { apiBaseUrl } from "@/lib/deals";
-import { withBearerToken } from "@/lib/deals";
 import { useAuth } from "@clerk/nextjs";
 
 type DealCardProps = {
@@ -11,7 +10,7 @@ type DealCardProps = {
 };
 
 export function DealCard({ deal, onOpen }: DealCardProps) {
-  const { getToken, userId } = useAuth();
+  const { userId } = useAuth();
 
   const handleDealClick = async (dealId: string) => {
     onOpen();
@@ -20,15 +19,14 @@ export function DealCard({ deal, onOpen }: DealCardProps) {
     }
 
     try {
-      const token = await getToken();
       await fetch(`${apiBaseUrl}/api/analytics/event`, {
         method: "POST",
-        headers: withBearerToken(token, {
+        headers: {
           "Content-Type": "application/json",
-        }),
+        },
         body: JSON.stringify({
           eventType: "CLICK_VIEW_DETAIL",
-          userId: userId,
+          ...(userId && { userId }),
           dealId: dealId,
           brandSlug: deal.brandSlug,
         }),

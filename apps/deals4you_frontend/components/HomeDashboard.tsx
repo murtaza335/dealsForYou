@@ -85,10 +85,7 @@ export function HomeDashboard() {
     setErrorMessage(null);
 
     try {
-      const token = await getToken();
-      const response = await fetch(`${apiBaseUrl}/api/analytics/trending/deals`, {
-        headers: withBearerToken(token),
-      });
+      const response = await fetch(`${apiBaseUrl}/api/analytics/trending/deals`);
       if (!response.ok) {
         throw new Error("Could not fetch top deals.");
       }
@@ -102,12 +99,9 @@ export function HomeDashboard() {
     } finally {
       setLoadingTop(false);
     }
-  }, [getToken]);
+  }, []);
 
   useEffect(() => {
-    if (!isSignedIn) {
-      return;
-    }
 
     const timer = setTimeout(() => {
       void fetchRecommendedDeals();
@@ -115,7 +109,7 @@ export function HomeDashboard() {
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [isSignedIn, fetchRecommendedDeals, fetchTopDeals]);
+  }, [ fetchRecommendedDeals, fetchTopDeals]);
 
 
 
