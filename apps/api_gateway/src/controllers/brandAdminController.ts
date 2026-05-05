@@ -1,9 +1,9 @@
 import type { RequestHandler } from "express";
-import { getAuth } from "@clerk/express";
 import { brandAdminService } from "../services/brandAdminService.js";
 import { clerkAdminService } from "../services/clerkAdminService.js";
 import { dealsService } from "../services/dealsService.js";
 import { userDomainService } from "../services/userDomainService.js";
+import { getAuthContext } from "../utils/auth.js";
 
 type HttpError = Error & { statusCode?: number };
 
@@ -14,12 +14,12 @@ const httpError = (message: string, statusCode: number): HttpError => {
 };
 
 async function requireRole(req: Parameters<RequestHandler>[0], roles: string[]) {
-  const auth = getAuth(req);
-  if (!auth.userId) {
+  const { userId } = getAuthContext(req);
+  if (!userId) {
     throw httpError("Unauthorized. Valid Clerk token is required.", 401);
   }
 
-  const user = await userDomainService.fetchMe(req.headers.authorization, auth.userId);
+  const user = await userDomainService.fetchMe(req.headers.authorization, userId);
   if (!user) {
     throw httpError("User not found in domain.", 404);
   }
@@ -206,7 +206,7 @@ export const getAppAdminOverview: RequestHandler = async (req, res, next) => {
       userDomainService.listUsers("APP_ADMIN"),
       brandAdminService.listBrands(),
       brandAdminService.listPendingBrands(),
-      dealsService.getTopDeals(8),
+      dealsService.getTopDeals({ limit: 8 }),
     ]);
 
     res.status(200).json({
@@ -219,7 +219,7 @@ export const getAppAdminOverview: RequestHandler = async (req, res, next) => {
         totalBrands: brands.length,
         pendingBrands: pendingBrands.length,
         approvedBrands: brands.filter((brand: { approvalStatus?: string }) => brand.approvalStatus === "APPROVED").length,
-        topDeals,
+        topDeals: topDeals.items,
       },
     });
   } catch (error) {
@@ -240,7 +240,7 @@ export const listAllBrandsForAdmin: RequestHandler = async (req, res, next) => {
 export const getBrandForAdmin: RequestHandler = async (req, res, next) => {
   try {
     await requireRole(req, ["APP_ADMIN"]);
-    const brand = await brandAdminService.getBrandByPublicId(String(req.params.brandId));
+    const brand = await brandAdminService.getBrand(String(req.params.brandId));
 
     if (!brand) {
       return res.status(404).json({ success: false, message: "Brand not found." });
@@ -255,7 +255,7 @@ export const getBrandForAdmin: RequestHandler = async (req, res, next) => {
 export const getBrandDealsForAdmin: RequestHandler = async (req, res, next) => {
   try {
     await requireRole(req, ["APP_ADMIN"]);
-    const deals = await brandAdminService.listBrandDeals(String(req.params.brandId));
+    const deals = await brandAdminService.listDeals(String(req.params.brandId));
     res.status(200).json({ success: true, data: deals });
   } catch (error) {
     next(error);
