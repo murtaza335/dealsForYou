@@ -6,6 +6,7 @@ import "./models/userEvent.model.js";
 import "./models/userProfile.mode.js";
 import "./models/userMoodProfile.model.js";
 import { initRabbitMQSubscriber, closeSubscriber } from "./services/rabbitmq.subscriber.js";
+import { logger } from "./utils/logger.js";
 
 async function bootstrap(): Promise<void> {
   await connectDb();
@@ -19,38 +20,37 @@ async function bootstrap(): Promise<void> {
     // Initialize RabbitMQ subscriber for deal embeddings
   try {
     await initRabbitMQSubscriber();
+    logger.info("RabbitMQ subscriber initialized");
   } catch (err) {
-    console.error('Failed to init RabbitMQ subscriber:', err);
+    logger.error("Failed to init RabbitMQ subscriber:", err);
     process.exit(1);
   }
 
   const shutdown = (signal: string) => {
-    console.log(`${signal} received. Shutting down recommendation service...`);
+    logger.info(`${signal} received. Shutting down recommendation service...`);
 
     server.close(async () => {
       try {
         await closeSubscriber();
         await mongoose.connection.close();
-        console.log("HTTP server closed and DB connection terminated.");
+        logger.info("HTTP server closed and DB connection terminated.");
         process.exit(0);
       } catch (error) {
-        console.error("Error during shutdown:", error);
+        logger.error("Error during shutdown:", error);
         process.exit(1);
       }
     });
-
-    
   };
 
   process.on("SIGINT", () => shutdown("SIGINT"));
   process.on("SIGTERM", () => shutdown("SIGTERM"));
 
   mongoose.connection.on("error", (error) => {
-    console.error("MongoDB connection error:", error);
+    logger.error("MongoDB connection error:", error);
   });
 }
 
 bootstrap().catch((error) => {
-  console.error("Failed to start recommendation service:", error);
+  logger.error("Failed to start recommendation service:", error);
   process.exit(1);
 });

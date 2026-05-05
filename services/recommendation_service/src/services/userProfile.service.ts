@@ -3,6 +3,7 @@ import { DealEmbeddingModel } from "../models/dealEmbedding.model.js";
 import { UserProfileModel } from "../models/userProfile.mode.js";
 import { embeddingService } from "./embeddingService.js";
 import { env } from "../config/env.js";
+import { logger } from "../utils/logger.js";
 
 function decayWeight(occurredAt: Date): number {
   const ageDays = (Date.now() - occurredAt.getTime()) / (1000 * 60 * 60 * 24);
@@ -23,9 +24,11 @@ function normalize(vector: number[]): number[] {
 }
 
 export async function rebuildUserProfile(userId: string) {
+  logger.debug("rebuildUserProfile called for", userId);
   const events = await UserEventModel.find({ userId }).sort({ occurredAt: -1 }).limit(100);
 
   if (!events.length) {
+    logger.info("rebuildUserProfile: cold start, no events for", userId);
     return {
       coldStart: true,
       profileVector: null,
@@ -103,6 +106,8 @@ export async function rebuildUserProfile(userId: string) {
     },
     { upsert: true }
   );
+
+  logger.info("rebuildUserProfile: computed profile for", userId, "confidence", confidenceScore);
 
   return {
     coldStart: false,

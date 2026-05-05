@@ -2,6 +2,7 @@ import { pipeline } from "@xenova/transformers";
 import { createHash } from "crypto";
 import { DealEmbeddingModel } from "../models/dealEmbedding.model.js";
 import { env } from "../config/env.js";
+import { logger } from "../utils/logger.js";
 
 let embeddingPipeline: any = null;
 
@@ -36,6 +37,7 @@ export type EmbedDealPayload = {
 
 export class EmbeddingService {
   async generateEmbedding(text: string): Promise<number[]> {
+    logger.debug("Generating embedding for text length", text.length);
     const pipe = await getEmbeddingPipeline();
 
     const output = await (pipe as any)(text, {
@@ -47,6 +49,7 @@ export class EmbeddingService {
   }
 
   async embedAndStoreDeal(payload: EmbedDealPayload): Promise<void> {
+    logger.info("Embedding and storing deal", payload.dealId);
     const embedding = await this.generateEmbedding(payload.text);
     const textHash = createHash("sha256").update(payload.text).digest("hex");
 
@@ -79,6 +82,7 @@ export class EmbeddingService {
       },
       { upsert: true }
     );
+    logger.debug("Stored embedding for deal", payload.dealId, "hash", textHash);
   }
 }
 

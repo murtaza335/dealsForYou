@@ -3,6 +3,7 @@ import { buildDealText } from "../utils/dealTextBuilder.js";
 import { embeddingService } from "../services/embeddingService.js";
 import { UserEventModel } from "../models/userEvent.model.js";
 import { rebuildUserProfile } from "../services/userProfile.service.js";
+import { logger } from "../utils/logger.js";
 
 const router = express.Router();
 
@@ -101,7 +102,7 @@ router.post("/seed-deals", async (_req, res) => {
       seededDealIds: SAMPLE_DEALS.map((deal) => deal.dealId),
     });
   } catch (error) {
-    console.error("Debug seed-deals error:", error);
+    logger.error("Debug seed-deals error:", error);
     res.status(500).json({
       error: "Failed to seed sample deals",
       detail: error instanceof Error ? error.message : "Unknown error",
@@ -141,7 +142,7 @@ router.post("/seed-clicks/:userId", async (req, res) => {
       seededActions: events.map((event) => ({ action: event.action, dealId: event.dealId })),
     });
   } catch (error) {
-    console.error("Debug seed-clicks error:", error);
+    logger.error("Debug seed-clicks error:", error);
     res.status(500).json({
       error: "Failed to seed sample clicks",
       detail: error instanceof Error ? error.message : "Unknown error",
@@ -157,7 +158,7 @@ router.post("/rebuild-profile/:userId", async (req, res) => {
       profile,
     });
   } catch (error) {
-    console.error("Debug rebuild-profile error:", error);
+    logger.error("Debug rebuild-profile error:", error);
     res.status(500).json({
       error: "Failed to rebuild user profile",
       detail: error instanceof Error ? error.message : "Unknown error",
