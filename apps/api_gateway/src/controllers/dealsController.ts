@@ -1,29 +1,29 @@
 import { RequestHandler } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuthContext } from "../utils/auth.js";
 import {
   dealsService,
   type CurrentMoodDealsQuery,
   type RecommendedDealsQuery,
 } from "../services/dealsService.js";
 
-export const getBrands: RequestHandler = async (req, res, next) => {
-  try {
-    console.log("[Gateway] GET /api/deals/brands");
+// export const getBrands: RequestHandler = async (req, res, next) => {
+//   try {
+//     console.log("[Gateway] GET /api/deals/brands");
 
-    const brands = await dealsService.getBrands();
+//     const brands = await dealsService.getBrands();
 
-    console.log("[Gateway] Brands fetched:", brands.length);
+//     console.log("[Gateway] Brands fetched:", brands.length);
 
-    res.status(200).json({
-      success: true,
-      data: brands,
-      message: "Brands fetched successfully",
-    });
-  } catch (error) {
-    console.error("[Gateway] getBrands failed:", error);
-    next(error);
-  }
-};
+//     res.status(200).json({
+//       success: true,
+//       data: brands,
+//       message: "Brands fetched successfully",
+//     });
+//   } catch (error) {
+//     console.error("[Gateway] getBrands failed:", error);
+//     next(error);
+//   }
+// };
 
 export const getFilteredDeals: RequestHandler = async (req, res, next) => {
   try {
@@ -142,9 +142,9 @@ export const getDealById: RequestHandler = async (req, res, next) => {
 
 export const getRecommendedDeals: RequestHandler = async (req, res, next) => {
   try {
-    const auth = getAuth(req);
+    const { userId } = getAuthContext(req);
     const query: RecommendedDealsQuery = {
-      userId: typeof req.query.userId === "string" ? req.query.userId : undefined,
+      userId: typeof req.query.userId === "string" ? req.query.userId : userId,
       limit:
         typeof req.query.limit === "string" ? Number(req.query.limit) : undefined,
     };
@@ -163,10 +163,10 @@ export const getRecommendedDeals: RequestHandler = async (req, res, next) => {
 
 export const getCurrentMoodDeals: RequestHandler = async (req, res, next) => {
   try {
-    const auth = getAuth(req);
+    const { userId, sessionId } = getAuthContext(req);
     const query: CurrentMoodDealsQuery = {
-      userId: typeof req.query.userId === "string" ? req.query.userId : undefined,
-      sessionId: auth.sessionId ?? undefined,
+      userId: typeof req.query.userId === "string" ? req.query.userId : userId,
+      sessionId: sessionId ?? undefined,
       limit:
         typeof req.query.limit === "string" ? Number(req.query.limit) : undefined,
     };

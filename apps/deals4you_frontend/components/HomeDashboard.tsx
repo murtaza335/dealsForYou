@@ -106,7 +106,7 @@ export function HomeDashboard() {
       <div>
         <HomeSlider images={images} />
       </div>
-      <div className="relative z-10 w-full px-4 pb-6 pt-25 sm:px-6 lg:px-8">
+      <div className="relative z-10 w-full px-4 pb-8 pt-24 sm:px-6 sm:pb-10 sm:pt-28 lg:px-8 lg:pt-32">
         <div className="w-full max-w-none space-y-12 lg:space-y-16">
 
 
@@ -120,7 +120,7 @@ export function HomeDashboard() {
           <div className="flex justify-center pt-2">
             <Link
               href="/deals"
-              className="group inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 px-6 py-3 text-sm font-semibold text-black shadow-lg shadow-amber-500/20 transition duration-300 hover:-translate-y-0.5 hover:shadow-amber-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              className="group inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 px-4 py-2.5 text-xs font-semibold text-black shadow-lg shadow-amber-500/20 transition duration-300 hover:-translate-y-0.5 hover:shadow-amber-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:px-6 sm:py-3 sm:text-sm"
               aria-label="Dive deeper into deals"
             >
               {/* Pizza icon */}
