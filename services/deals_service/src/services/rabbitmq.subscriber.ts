@@ -12,7 +12,7 @@ class RabbitMQSubscriber {
 
     async init() {
         try {
-            this.connection = await amqp.connect(process.env.RABBITMQ_URL || "amqp://localhost");
+            this.connection = await amqp.connect(process.env.RABBITMQ_URL || process.env.RABBITMQ_LOCAL_URL || "amqp://localhost");
             this.channel = await this.connection.createChannel();
 
             await this.channel.assertQueue(this.queue, { durable: true });

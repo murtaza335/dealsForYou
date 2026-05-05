@@ -32,7 +32,7 @@ function normalizeDealPayload(dealData: DealPayloadInput): Record<string, unknow
 async function getChannel(): Promise<Channel> {
   if (channel) return channel;
 
-  const conn = await amqp.connect(process.env.RABBITMQ_URL || "amqp://localhost:5672");
+  const conn = await amqp.connect(process.env.RABBITMQ_URL || process.env.RABBITMQ_LOCAL_URL || "amqp://localhost:5672");
   const ch = await conn.createChannel();
   await ch.assertExchange("deals.events", "direct", { durable: true });
 
