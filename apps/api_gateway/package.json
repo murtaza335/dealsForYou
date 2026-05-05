@@ -9,6 +9,7 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "@clerk/express": "^2.1.10"
+    "@clerk/express": "^2.1.10",
+    "redis": "^5.12.1"
   }
 }
