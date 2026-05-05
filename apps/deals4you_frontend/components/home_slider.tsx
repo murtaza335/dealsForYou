@@ -32,13 +32,13 @@ export function HomeSlider({
 	}
 
 	return (
-		<section className="relative h-screen w-screen overflow-hidden">
+		<section className="relative h-[70vh] w-full overflow-hidden sm:h-screen">
 			<div
 				className="flex h-full w-full transition-transform duration-700 ease-out"
 				style={{ transform: `translateX(-${activeIndex * 100}%)` }}
 			>
 				{images.map((src, index) => (
-					<div key={`${src}-${index}`} className="h-screen w-screen flex-shrink-0">
+					<div key={`${src}-${index}`} className="h-full w-full flex-shrink-0">
 						<img
 							src={src}
 							alt={`Slide ${index + 1}`}
