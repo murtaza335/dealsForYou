@@ -44,3 +44,67 @@ export const trackEvent: RequestHandler = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getFavourites: RequestHandler = async (req, res, next) => {
+  try {
+    const userId = getAuth(req).userId as string;
+
+    const favourites = await analyticsService.getFavourites(userId);
+
+    res.status(200).json({
+      success: true,
+      data: favourites,
+      message: "Favourites fetched successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getFavouritesDetails: RequestHandler = async (req, res, next) => {
+  try {
+    const userId = getAuth(req).userId as string;
+
+    const details = await analyticsService.getFavouritesDetails(userId);
+
+    res.status(200).json({
+      success: true,
+      data: details,
+      message: "Favourites details fetched successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const addFavourite: RequestHandler = async (req, res, next) => {
+  try {
+    const userId = getAuth(req).userId as string;
+
+    const payload = { ...req.body, userId };
+    await analyticsService.addFavourite(payload);
+
+    res.status(201).json({
+      success: true,
+      message: "Favourite added successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removeFavourite: RequestHandler = async (req, res, next) => {
+  try {
+    const userId = getAuth(req).userId as string;
+
+    const payload = { ...req.body, userId };
+    await analyticsService.removeFavourite(payload);
+
+    res.status(200).json({
+      success: true,
+      message: "Favourite removed successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
