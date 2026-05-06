@@ -64,6 +64,10 @@ class DealsService {
   ): Promise<DealDocument | null> {
     return this.dealRepository.deleteDealForBrand(brandIdentifier, dealIdentifier);
   }
+
+  async setFavoriteStatus(dealExternalId: string, brandSlug: string, isFavorited: boolean): Promise<boolean> {
+    return this.dealRepository.setFavoriteStatus(dealExternalId, brandSlug, isFavorited);
+  }
 }
 
 export const dealsService = new DealsService();

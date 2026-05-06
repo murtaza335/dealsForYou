@@ -111,7 +111,7 @@ const parseDealsFilters = (req: Request): DealFilters | { error: string } => {
 
   const sortBy =
     typeof req.query.sortBy === "string" &&
-    ["createdAt", "price", "discountPercent", "viewsCount", "endTime"].includes(req.query.sortBy)
+      ["createdAt", "price", "discountPercent", "viewsCount", "endTime"].includes(req.query.sortBy)
       ? (req.query.sortBy as DealFilters["sortBy"])
       : undefined;
 
@@ -305,6 +305,30 @@ export const getFilterPriceRange = async (_req: Request, res: Response, next: Ne
       success: true,
       message: "Filter price range fetched successfully.",
       data: priceRange,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const setFavoriteStatus = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { dealExternalId, brandSlug, isFavorited } = req.body;
+    console.log(`[Deals Service] Received setFavoriteStatus request:`, { dealExternalId, brandSlug, isFavorited });
+
+    if (!dealExternalId || !brandSlug || typeof isFavorited !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "dealExternalId, brandSlug, and isFavorited (boolean) are required.",
+      });
+    }
+
+    const success = await dealsService.setFavoriteStatus(dealExternalId, brandSlug, isFavorited);
+
+    return res.status(200).json({
+      success: true,
+      message: success ? "Favorite status updated successfully." : "Deal not found or status already set.",
+      data: { success },
     });
   } catch (error) {
     next(error);

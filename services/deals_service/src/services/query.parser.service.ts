@@ -12,13 +12,13 @@ export interface ParsedFilters {
 
 class QueryParserService {
   private getApiKey(): string | undefined {
-    return process.env.GOOGLE_AI_STUDIO_API_KEY;
+    return process.env.GROQ_API_KEY;
   }
 
   async parseQuery(query: string): Promise<ParsedFilters | null> {
     const apiKey = this.getApiKey();
     if (!apiKey) {
-      console.warn("[QueryParser] Missing GOOGLE_AI_STUDIO_API_KEY");
+      console.warn("[QueryParser] Missing GROQ_API_KEY");
       return null;
     }
 
@@ -37,50 +37,65 @@ class QueryParserService {
     `;
 
     try {
-      console.log(`[QueryParser] Sending query to Gemini: "${query}"`);
+      console.log(`[QueryParser] Sending query to Groq: "${query}"`);
       
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`,
+        "https://api.groq.com/openai/v1/chat/completions",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              {
+                role: "system",
+                content: "You are a specialized query parser that extracts search filters and returns ONLY JSON.",
+              },
+              {
+                role: "user",
+                content: prompt,
+              }
+            ],
+            temperature: 0.1,
+            response_format: { type: "json_object" }
           }),
         }
       );
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+        throw new Error(`Groq API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const content = data.choices?.[0]?.message?.content;
       
-      if (!text) {
-        console.warn("[QueryParser] No text content in Gemini response");
+      if (!content) {
+        console.warn("[QueryParser] No content in Groq response");
         return null;
       }
 
-      console.log(`[QueryParser] Gemini response: ${text.trim()}`);
+      console.log(`[QueryParser] Groq response: ${content.trim()}`);
 
-      // Extract JSON from response (handling potential markdown formatting)
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        try {
-          const parsed = JSON.parse(jsonMatch[0]);
-          return parsed;
-        } catch (e) {
-          console.error("[QueryParser] Failed to parse JSON from Gemini response:", e);
-          return null;
+      try {
+        const parsed = JSON.parse(content);
+        return parsed;
+      } catch (e) {
+        console.error("[QueryParser] Failed to parse JSON from Groq response:", e);
+        // Attempt regex fallback if JSON parsing fails directly
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            return JSON.parse(jsonMatch[0]);
+          } catch (innerE) {
+            return null;
+          }
         }
+        return null;
       }
-
-      console.warn("[QueryParser] No JSON found in Gemini response");
-      return null;
     } catch (error) {
       console.error("[QueryParser] Failed to parse query:", error);
       return null;
