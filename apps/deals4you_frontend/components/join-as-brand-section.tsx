@@ -121,7 +121,7 @@ export function JoinAsBrandSection() {
 					<div className="flex shrink-0 flex-col items-start gap-3 lg:items-end">
 						<Link
 							href="/sign-up/brand-admin"
-							className="inline-flex items-center justify-center rounded-md bg-amber-400 px-6 py-3 text-sm font-semibold text-black transition hover:bg-amber-300"
+							className="inline-flex w-full items-center justify-center rounded-md bg-amber-400 px-6 py-3 text-sm font-semibold text-black transition hover:bg-amber-300 sm:w-auto"
 						>
 							Register as a brand
 						</Link>

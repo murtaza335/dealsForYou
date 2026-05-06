@@ -29,10 +29,24 @@ class DealsService {
         continue;
       }
 
+      if (typeof value === "number" && Number.isFinite(value)) {
+        searchParams.append(key, String(value));
+        continue;
+      }
+
+      if (typeof value === "boolean") {
+        searchParams.append(key, String(value));
+        continue;
+      }
+
       if (Array.isArray(value)) {
         for (const item of value) {
           if (typeof item === "string" && item.trim().length > 0) {
             searchParams.append(key, item.trim());
+          } else if (typeof item === "number" && Number.isFinite(item)) {
+            searchParams.append(key, String(item));
+          } else if (typeof item === "boolean") {
+            searchParams.append(key, String(item));
           }
         }
       }
@@ -58,7 +72,7 @@ class DealsService {
       throw new Error(`Failed to fetch from deals service (${response.status}).`);
     }
 
-    return response.json() as Promise<{ data?: unknown[] | unknown }>;
+    return response.json() as Promise<{ data?: unknown[] | unknown; pagination?: unknown }>;
   }
 
   private async fetchFromRecommendationService(pathname: string, query?: Record<string, unknown>) {
@@ -85,7 +99,10 @@ class DealsService {
 
   async getFilteredDeals(query: Record<string, unknown>) {
     const payload = await this.fetchFromDealsService("/api/deals", query);
-    return payload.data ?? [];
+    return {
+      items: payload.data ?? [],
+      pagination: payload.pagination,
+    };
   }
 
   async getDealFilterOptions() {
@@ -182,9 +199,26 @@ class DealsService {
     return this.getDealsByIds(dealIds);
   }
 
-  async getTopDeals(_limit?: number) {
-    
-    return [];
+  async getTopDeals({ page, limit: requestedLimit }: { page?: number; limit?: number } = {}) {
+    const limit =
+      Number.isFinite(requestedLimit) && requestedLimit && requestedLimit > 0
+        ? Math.floor(requestedLimit)
+        : 8;
+    const normalizedPage = Number.isFinite(page) && page && page > 0 ? Math.floor(page) : 1;
+
+    const payload = await this.fetchFromDealsService("/api/deals", {
+      page: normalizedPage,
+      limit,
+      sortBy: "viewsCount",
+      sortOrder: "desc",
+      isActive: true,
+      isExpired: false,
+    });
+
+    return {
+      items: payload.data ?? [],
+      pagination: payload.pagination,
+    };
   }
 
   async getBrandsInfo() {

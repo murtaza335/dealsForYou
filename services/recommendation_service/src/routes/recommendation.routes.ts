@@ -3,6 +3,7 @@ import { DealEmbeddingModel } from "../models/dealEmbedding.model.js";
 import { UserMoodProfileModel } from "../models/userMoodProfile.model.js";
 import { rebuildUserProfile } from "../services/userProfile.service.js";
 import { env } from "../config/env.js";
+import { logger } from "../utils/logger.js";
 
 const router = express.Router();
 
@@ -97,7 +98,7 @@ router.get("/recommendations/current-mood/:userId", async (req, res) => {
       debug: ranked,
     });
   } catch (err) {
-    console.error("Current mood recommendations error:", err);
+    logger.error("Current mood recommendations error:", err);
     return res.status(500).json({ error: "Failed to fetch current mood recommendations" });
   }
 });
@@ -169,7 +170,7 @@ router.post("/recommendations/refresh/:userId", async (req, res) => {
       debug: ranked,
     });
   } catch (err) {
-    console.error("Recommendations error:", err);
+    logger.error("Recommendations error:", err);
     res.status(500).json({ error: "Failed to fetch recommendations" });
   }
 });

@@ -4,6 +4,7 @@ import { embeddingService } from "./embeddingService.js";
 import { env } from "../config/env.js";
 import { UserEventModel } from "../models/userEvent.model.js";
 import { updateUserMoodProfile } from "./userMoodProfile.service.js";
+import { logger } from "../utils/logger.js";
 
 let connection: ChannelModel | null = null;
 let channel: Channel | null = null;
@@ -47,6 +48,8 @@ async function handleMessage(msg: ConsumeMessage) {
   const payload = JSON.parse(msg.content.toString()) as DealEventPayload;
   const { dealId, brandId, dealData } = payload;
 
+  logger.debug("Received deal event", payload.eventType, dealId);
+
   const text = buildDealText(
     {
       title: dealData.title,
@@ -83,11 +86,14 @@ async function handleMessage(msg: ConsumeMessage) {
     locations: dealData.locations,
     text,
   });
+  logger.info("Processed deal embedding for", dealId);
 }
 
 async function handleAnalyticsMessage(msg: ConsumeMessage) {
   const payload = JSON.parse(msg.content.toString()) as AnalyticsEventPayload;
   const occurredAt = payload.occurredAt ? new Date(payload.occurredAt) : new Date();
+
+  logger.debug("Received analytics event", payload.action, payload.userId, payload.dealId);
 
   await UserEventModel.create({
     userId: payload.userId,
@@ -111,26 +117,27 @@ async function handleAnalyticsMessage(msg: ConsumeMessage) {
     queryText: payload.queryText,
     occurredAt,
   });
+  logger.info("Processed analytics event", payload.action, payload.userId || "unknown");
 }
 
 export async function initRabbitMQSubscriber(): Promise<void> {
-  connection = await amqplib.connect(env.RABBITMQ_URL);
+  connection = await amqplib.connect(process.env.RABBITMQ_URL || process.env.RABBITMQ_LOCAL_URL || "amqp://localhost:5672");
   channel = await connection.createChannel();
 
   connection.on("error", (error) => {
-    console.error("RabbitMQ connection error:", error);
+    logger.error("RabbitMQ connection error:", error);
   });
 
   connection.on("close", () => {
-    console.warn("RabbitMQ connection closed.");
+    logger.warn("RabbitMQ connection closed.");
   });
 
   channel.on("error", (error) => {
-    console.error("RabbitMQ channel error:", error);
+    logger.error("RabbitMQ channel error:", error);
   });
 
   channel.on("close", () => {
-    console.warn("RabbitMQ channel closed.");
+    logger.warn("RabbitMQ channel closed.");
   });
 
   await channel.assertExchange("deals.events", "direct", { durable: true });
@@ -150,7 +157,7 @@ export async function initRabbitMQSubscriber(): Promise<void> {
         await handleMessage(msg);
         channel.ack(msg);
       } catch (error) {
-        console.error("Embedding consumer failed:", error);
+        logger.error("Embedding consumer failed:", error);
         channel.nack(msg, false, true);
       }
     },
@@ -166,7 +173,7 @@ export async function initRabbitMQSubscriber(): Promise<void> {
         await handleAnalyticsMessage(msg);
         channel.ack(msg);
       } catch (error) {
-        console.error("Analytics queue consumer failed:", error);
+        logger.error("Analytics queue consumer failed:", error);
         channel.nack(msg, false, false);
       }
     },

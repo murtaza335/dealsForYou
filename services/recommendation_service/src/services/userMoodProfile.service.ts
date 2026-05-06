@@ -1,6 +1,7 @@
 import { DealEmbeddingModel } from "../models/dealEmbedding.model.js";
 import { UserMoodProfileModel } from "../models/userMoodProfile.model.js";
 import { embeddingService } from "./embeddingService.js";
+import { logger } from "../utils/logger.js";
 
 type MoodAction = "click_view_detail" | "click_external_link" | "search_query";
 
@@ -58,10 +59,14 @@ async function resolveEventVector(payload: UpdateMoodProfilePayload): Promise<nu
 }
 
 export async function updateUserMoodProfile(payload: UpdateMoodProfilePayload): Promise<void> {
+  logger.debug("updateUserMoodProfile called", payload.userId, payload.sessionId, payload.action);
   if (!payload.userId || !payload.sessionId) return;
 
   const vector = await resolveEventVector(payload);
-  if (!vector) return;
+  if (!vector) {
+    logger.debug("No vector resolved for payload", payload);
+    return;
+  }
 
   const existing = await UserMoodProfileModel.findOne({
     userId: payload.userId,
@@ -100,4 +105,5 @@ export async function updateUserMoodProfile(payload: UpdateMoodProfilePayload): 
     },
     { upsert: true }
   );
+  logger.debug("Updated mood profile for", payload.userId, payload.sessionId);
 }
