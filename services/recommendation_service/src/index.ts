@@ -7,6 +7,7 @@ import "./models/userEvent.model.js";
 import "./models/userProfile.mode.js";
 import "./models/userMoodProfile.model.js";
 import { initRabbitMQSubscriber, closeSubscriber } from "./services/rabbitmq.subscriber.js";
+import { logger } from "./utils/logger.js";
 
 async function bootstrap(): Promise<void> {
   try {
@@ -75,6 +76,6 @@ async function bootstrap(): Promise<void> {
 
 
 bootstrap().catch((error) => {
-  console.error("Failed to start recommendation service:", error);
+  logger.error("Failed to start recommendation service:", error);
   process.exit(1);
 });

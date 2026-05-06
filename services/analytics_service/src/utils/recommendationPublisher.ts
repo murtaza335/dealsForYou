@@ -22,7 +22,7 @@ const QUEUE_NAME = "analytics_recommendation.queue";
 async function getChannel(): Promise<Channel> {
   if (channel) return channel;
 
-  const conn = await amqp.connect(process.env.RABBITMQ_URL || "amqp://localhost:5672");
+  const conn = await amqp.connect(process.env.RABBITMQ_URL || process.env.RABBITMQ_LOCAL_URL || "amqp://localhost:5672");
   const ch = await conn.createChannel();
 
   //  Direct queue instead of exchange

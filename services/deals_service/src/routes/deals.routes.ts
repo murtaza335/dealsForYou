@@ -8,6 +8,7 @@ import {
 	getFilterMealTypes,
 	getFilterOptions,
 	getFilterPriceRange,
+	setFavoriteStatus,
 } from "../controllers/deals.controller.js";
 
 export const dealsRouter = Router();
@@ -22,3 +23,4 @@ dealsRouter.get("/", getDeals);
 dealsRouter.get("/filtered", getDeals);
 dealsRouter.get("/bulk", getDealsByIds);
 dealsRouter.get("/:dealId", getDealById);
+dealsRouter.patch("/favorite", setFavoriteStatus);
