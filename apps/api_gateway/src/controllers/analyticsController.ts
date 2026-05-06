@@ -2,6 +2,7 @@ import type { RequestHandler } from "express";
 import { analyticsService } from "../services/analyticsService.js";
 import { getAuthContext } from "../utils/auth.js";
 
+
 export const getTrendingDeals: RequestHandler = async (_req, res, next) => {
   try {
     const deals = await analyticsService.getTrendingDeals();
@@ -47,7 +48,11 @@ export const trackEvent: RequestHandler = async (req, res, next) => {
 
 export const getFavourites: RequestHandler = async (req, res, next) => {
   try {
-    const userId = getAuth(req).userId as string;
+    const { userId } = getAuthContext(req);
+    if (!userId) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
 
     const favourites = await analyticsService.getFavourites(userId);
 
@@ -63,7 +68,11 @@ export const getFavourites: RequestHandler = async (req, res, next) => {
 
 export const getFavouritesDetails: RequestHandler = async (req, res, next) => {
   try {
-    const userId = getAuth(req).userId as string;
+    const { userId } = getAuthContext(req);
+    if (!userId) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
 
     const details = await analyticsService.getFavouritesDetails(userId);
 
@@ -78,8 +87,13 @@ export const getFavouritesDetails: RequestHandler = async (req, res, next) => {
 };
 
 export const addFavourite: RequestHandler = async (req, res, next) => {
+  console.log(`[Gateway] addFavourite request body:`, req.body);
   try {
-    const userId = getAuth(req).userId as string;
+    const { userId } = getAuthContext(req);
+    if (!userId) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
 
     const payload = { ...req.body, userId };
     await analyticsService.addFavourite(payload);
@@ -95,7 +109,11 @@ export const addFavourite: RequestHandler = async (req, res, next) => {
 
 export const removeFavourite: RequestHandler = async (req, res, next) => {
   try {
-    const userId = getAuth(req).userId as string;
+    const { userId } = getAuthContext(req);
+    if (!userId) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
 
     const payload = { ...req.body, userId };
     await analyticsService.removeFavourite(payload);
