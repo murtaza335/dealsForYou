@@ -3,6 +3,7 @@ import { buildDealText } from "../utils/dealTextBuilder.js";
 import { embeddingService } from "../services/embeddingService.js";
 import { UserEventModel } from "../models/userEvent.model.js";
 import { rebuildUserProfile } from "../services/userProfile.service.js";
+import { logger, type LogContext } from "../utils/logger.js";
 
 const router = express.Router();
 
@@ -69,8 +70,11 @@ const SAMPLE_DEALS = [
   },
 ];
 
-router.post("/seed-deals", async (_req, res) => {
+router.post("/seed-deals", async (req, res) => {
+  const logContext = (req as any).logContext as LogContext;
   try {
+    logger.logProcessing(`Starting to seed ${SAMPLE_DEALS.length} sample deals`, logContext);
+    
     await Promise.all(
       SAMPLE_DEALS.map(async (deal) => {
         const text = buildDealText(
@@ -96,12 +100,13 @@ router.post("/seed-deals", async (_req, res) => {
       }),
     );
 
+    logger.logProcessing(`Successfully seeded ${SAMPLE_DEALS.length} deals with embeddings`, logContext);
     res.json({
       success: true,
       seededDealIds: SAMPLE_DEALS.map((deal) => deal.dealId),
     });
   } catch (error) {
-    console.error("Debug seed-deals error:", error);
+    logger.error("Failed to seed sample deals", error, logContext);
     res.status(500).json({
       error: "Failed to seed sample deals",
       detail: error instanceof Error ? error.message : "Unknown error",
@@ -110,8 +115,10 @@ router.post("/seed-deals", async (_req, res) => {
 });
 
 router.post("/seed-clicks/:userId", async (req, res) => {
+  const logContext = (req as any).logContext as LogContext;
   try {
     const { userId } = req.params;
+    logger.logProcessing(`Seeding sample click events for userId: ${userId}`, logContext);
 
     const events = [
       {
@@ -135,13 +142,14 @@ router.post("/seed-clicks/:userId", async (req, res) => {
     ];
 
     await UserEventModel.insertMany(events);
+    logger.logProcessing(`Seeded ${events.length} click events for userId: ${userId}`, logContext);
 
     res.json({
       success: true,
       seededActions: events.map((event) => ({ action: event.action, dealId: event.dealId })),
     });
   } catch (error) {
-    console.error("Debug seed-clicks error:", error);
+    logger.error("Failed to seed sample clicks", error, logContext);
     res.status(500).json({
       error: "Failed to seed sample clicks",
       detail: error instanceof Error ? error.message : "Unknown error",
@@ -150,14 +158,20 @@ router.post("/seed-clicks/:userId", async (req, res) => {
 });
 
 router.post("/rebuild-profile/:userId", async (req, res) => {
+  const logContext = (req as any).logContext as LogContext;
   try {
-    const profile = await rebuildUserProfile(req.params.userId);
+    const { userId } = req.params;
+    logger.logProcessing(`Rebuilding user profile for userId: ${userId}`, logContext);
+    
+    const profile = await rebuildUserProfile(userId);
+    
+    logger.logProcessing(`Successfully rebuilt user profile for userId: ${userId}`, logContext);
     res.json({
       success: true,
       profile,
     });
   } catch (error) {
-    console.error("Debug rebuild-profile error:", error);
+    logger.error("Failed to rebuild user profile", error, logContext);
     res.status(500).json({
       error: "Failed to rebuild user profile",
       detail: error instanceof Error ? error.message : "Unknown error",

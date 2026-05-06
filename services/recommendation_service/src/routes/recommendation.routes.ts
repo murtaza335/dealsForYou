@@ -3,6 +3,7 @@ import { DealEmbeddingModel } from "../models/dealEmbedding.model.js";
 import { UserMoodProfileModel } from "../models/userMoodProfile.model.js";
 import { rebuildUserProfile } from "../services/userProfile.service.js";
 import { env } from "../config/env.js";
+import { logger, type LogContext } from "../utils/logger.js";
 
 const router = express.Router();
 
@@ -36,19 +37,26 @@ function parseLimit(value: unknown, fallback: number): number {
 }
 
 router.get("/recommendations/current-mood/:userId", async (req, res) => {
+  const logContext = (req as any).logContext as LogContext;
   try {
     const { userId } = req.params;
     const sessionId = typeof req.query.sessionId === "string" ? req.query.sessionId.trim() : "";
 
+    logger.logProcessing(`Fetching current mood recommendations for userId: ${userId}, sessionId: ${sessionId}`, logContext);
+
     if (!sessionId) {
+      logger.warn(`Missing sessionId parameter for userId: ${userId}`, logContext);
       return res.status(400).json({ error: "sessionId is required" });
     }
 
     const limit = parseLimit(req.query.limit, env.RECOMMENDATION_LIMIT);
+    logger.logProcessing(`Parsed limit: ${limit}`, logContext);
+    
     const moodProfile = await UserMoodProfileModel.findOne({ userId, sessionId }).lean();
     const sourceDealIds = moodProfile?.sourceDealIds ?? [];
 
     if (!moodProfile?.moodVector?.length) {
+      logger.logProcessing(`No mood profile found for userId: ${userId}. Cold start response.`, logContext);
       return res.json({
         recommendedDealIds: [],
         coldStart: true,
@@ -58,6 +66,7 @@ router.get("/recommendations/current-mood/:userId", async (req, res) => {
       });
     }
 
+    logger.logProcessing(`Starting vector search with ${limit} recommendations`, logContext);
     const candidates = await DealEmbeddingModel.aggregate([
       {
         $vectorSearch: {
@@ -80,6 +89,8 @@ router.get("/recommendations/current-mood/:userId", async (req, res) => {
       },
     ]);
 
+    logger.logProcessing(`Vector search returned ${candidates.length} candidates`, logContext);
+    
     const sourceDealIdSet = new Set(sourceDealIds);
     const ranked = candidates
       .filter((doc) => !sourceDealIdSet.has(doc.dealId))
@@ -89,6 +100,8 @@ router.get("/recommendations/current-mood/:userId", async (req, res) => {
         semanticScore: doc.semanticScore,
       }));
 
+    logger.logProcessing(`Ranked and filtered to ${ranked.length} final recommendations`, logContext);
+    
     return res.json({
       recommendedDealIds: ranked.map((deal) => deal.dealId),
       coldStart: false,
@@ -97,20 +110,26 @@ router.get("/recommendations/current-mood/:userId", async (req, res) => {
       debug: ranked,
     });
   } catch (err) {
-    console.error("Current mood recommendations error:", err);
+    logger.error("Failed to fetch current mood recommendations", err, logContext);
     return res.status(500).json({ error: "Failed to fetch current mood recommendations" });
   }
 });
 
 router.post("/recommendations/refresh/:userId", async (req, res) => {
+  const logContext = (req as any).logContext as LogContext;
   try {
     const { userId } = req.params;
+    logger.logProcessing(`Rebuilding user profile and generating recommendations for userId: ${userId}`, logContext);
+    
     const limit = parseLimit(req.body?.limit, env.RECOMMENDATION_LIMIT);
     const numCandidates = Number(req.body?.numCandidates || env.RECOMMENDATION_CANDIDATES);
+    logger.logProcessing(`Parameters - limit: ${limit}, numCandidates: ${numCandidates}`, logContext);
 
+    logger.logProcessing(`Fetching and rebuilding user profile`, logContext);
     const profile = await rebuildUserProfile(userId);
 
     if (profile.coldStart || !profile.profileVector) {
+      logger.logProcessing(`Cold start condition detected for userId: ${userId}. No interaction history.`, logContext);
       return res.json({
         recommendedDealIds: [],
         coldStart: true,
@@ -119,6 +138,7 @@ router.post("/recommendations/refresh/:userId", async (req, res) => {
       });
     }
 
+    logger.logProcessing(`Starting hybrid vector search`, logContext);
     const candidates = await DealEmbeddingModel.aggregate([
       {
         $vectorSearch: {
@@ -147,6 +167,8 @@ router.post("/recommendations/refresh/:userId", async (req, res) => {
       },
     ]);
 
+    logger.logProcessing(`Vector search returned ${candidates.length} candidates`, logContext);
+    
     const ranked = candidates
       .map((doc) => {
         const structured = scoreStructured(doc, profile.signalsUsed);
@@ -161,6 +183,8 @@ router.post("/recommendations/refresh/:userId", async (req, res) => {
       .sort((a, b) => b.finalScore - a.finalScore)
       .slice(0, limit);
 
+    logger.logProcessing(`Ranked and scored ${ranked.length} final recommendations using hybrid scoring`, logContext);
+    
     res.json({
       recommendedDealIds: ranked.map((r) => r.dealId),
       coldStart: false,
@@ -169,7 +193,7 @@ router.post("/recommendations/refresh/:userId", async (req, res) => {
       debug: ranked,
     });
   } catch (err) {
-    console.error("Recommendations error:", err);
+    logger.error("Failed to fetch refreshed recommendations", err, logContext);
     res.status(500).json({ error: "Failed to fetch recommendations" });
   }
 });
