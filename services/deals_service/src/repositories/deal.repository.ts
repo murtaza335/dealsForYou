@@ -7,6 +7,7 @@ import { BrandDocument, BrandModel } from "../models/brands.model.js";
 import { v4 as uuidv4 } from "uuid";
 import { publishDealCreated } from "../services/rabbitmq.publisher.js";
 import { metadataEnrichmentService } from "../services/metadata.enrichment.service.js";
+import { queryParserService } from "../services/query.parser.service.js";
 
 export interface DealFilters {
   minPrice?: number;
@@ -932,6 +933,20 @@ async syncDealsForBrand(brandId: string, deals: DealDocument[], brandInfo: { bra
     ]);
 
     const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+
+    if (total === 0 && typeof filters.query === "string" && filters.query.trim().length > 0) {
+      console.log(`[DealRepository] No results for "${filters.query}". Attempting LLM fallback...`);
+      const parsedFilters = await queryParserService.parseQuery(filters.query);
+
+      if (parsedFilters && Object.keys(parsedFilters).length > 0) {
+        console.log("[DealRepository] LLM extracted filters:", parsedFilters);
+        return this.getDeals({
+          ...filters,
+          ...parsedFilters,
+          query: undefined,
+        });
+      }
+    }
 
     return {
       items,
