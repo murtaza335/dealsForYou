@@ -1102,13 +1102,5 @@ export class DealRepository {
   //   );
   // }
 
-  async setFavoriteStatus(dealExternalId: string, brandSlug: string, isFavorited: boolean): Promise<boolean> {
-    console.log(`[Repository] Updating favorite status for ${dealExternalId} (${brandSlug}) to ${isFavorited}`);
-    const result = await DealModel.updateOne(
-      { externalId: dealExternalId, brandSlug },
-      { $set: { isFavorited } }
-    );
-    console.log(`[Repository] Update result:`, { matched: result.matchedCount, modified: result.modifiedCount });
-    return result.modifiedCount > 0;
-  }
+
 }

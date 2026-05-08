@@ -15,8 +15,6 @@ export class FavouriteService {
       brandSlug
     );
 
-    // Sync with deals service via direct API
-    await this.syncWithDealsService(userId, dealExternalId, brandSlug, true);
 
     return {
       success: true,
@@ -41,8 +39,6 @@ export class FavouriteService {
       throw new Error("Favourite not found");
     }
 
-    // Sync with deals service via direct API
-    await this.syncWithDealsService(userId, dealExternalId, brandSlug, false);
 
     return {
       success: true,
@@ -139,21 +135,7 @@ export class FavouriteService {
     };
   }
 
-  private async syncWithDealsService(userId: string, dealExternalId: string, brandSlug: string, isFavorited: boolean) {
-    const dealsServiceUrl = process.env.DEALS_SERVICE_URL || "http://localhost:5002";
-    console.log(`[Sync] Sending sync request to ${dealsServiceUrl}/api/deals/favorite`, { dealExternalId, brandSlug, isFavorited });
-    try {
-      const response = await fetch(`${dealsServiceUrl}/api/deals/favorite`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dealExternalId, brandSlug, isFavorited }),
-      });
-      const data = await response.json();
-      console.log(`[Sync] Deals service response:`, data);
-    } catch (error) {
-      console.error("[Favourite Service] Direct sync with deals service failed:", error);
-    }
-  }
+
 }
 
 export const favouriteService = new FavouriteService();
