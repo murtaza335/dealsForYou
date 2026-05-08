@@ -164,6 +164,25 @@ export function DealsDashboard() {
   const [filteredPagination, setFilteredPagination] = useState<DealsPagination | null>(null);
 
   const [isExpanded, setIsExpanded] = useState(searchParams.get("search") === "true");
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+
+  const fetchFavorites = useCallback(async () => {
+    if (!isSignedIn || !userId) return;
+    try {
+      const token = await getToken();
+      const response = await fetch(`${apiBaseUrl}/api/analytics/favourites`, {
+        headers: withBearerToken(token),
+      });
+      if (response.ok) {
+        const payload = await response.json();
+        const favs = payload.data ?? [];
+        const ids = new Set<string>(favs.map((f: any) => f.dealExternalId));
+        setFavoriteIds(ids);
+      }
+    } catch (e) {
+      console.error("Failed to fetch favorites", e);
+    }
+  }, [isSignedIn, userId, getToken]);
 
   useEffect(() => {
     if (searchParams.get("search") === "true") {
@@ -244,6 +263,10 @@ export function DealsDashboard() {
   useEffect(() => {
     void fetchBrands();
   }, []);
+
+  useEffect(() => {
+    void fetchFavorites();
+  }, [fetchFavorites]);
 
   const onFilterSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -417,7 +440,7 @@ export function DealsDashboard() {
             {filteredDeals.map((deal) => (
               <DealCard 
                 key={deal.externalId} 
-                deal={deal} 
+                deal={{...deal, isFavorited: favoriteIds.has(deal.externalId)}} 
                 onOpen={() => setSelectedDeal(deal)} 
               />
             ))}

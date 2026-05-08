@@ -35,7 +35,6 @@ export interface DealDocument extends Document {
   deletedAt?: Date;
   baseUrl?: string;
   brandLogoUrl?: string;
-  isFavorited?: boolean;
 }
 
 const dealSchema = new Schema<DealDocument>(
@@ -82,7 +81,6 @@ const dealSchema = new Schema<DealDocument>(
     deletedAt: { type: Date },
     baseUrl: { type: String, default: "" },
     brandLogoUrl: { type: String, default: "" },
-    isFavorited: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

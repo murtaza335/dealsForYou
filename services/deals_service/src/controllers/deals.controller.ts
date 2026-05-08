@@ -311,26 +311,4 @@ export const getFilterPriceRange = async (_req: Request, res: Response, next: Ne
   }
 };
 
-export const setFavoriteStatus = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { dealExternalId, brandSlug, isFavorited } = req.body;
-    console.log(`[Deals Service] Received setFavoriteStatus request:`, { dealExternalId, brandSlug, isFavorited });
 
-    if (!dealExternalId || !brandSlug || typeof isFavorited !== "boolean") {
-      return res.status(400).json({
-        success: false,
-        message: "dealExternalId, brandSlug, and isFavorited (boolean) are required.",
-      });
-    }
-
-    const success = await dealsService.setFavoriteStatus(dealExternalId, brandSlug, isFavorited);
-
-    return res.status(200).json({
-      success: true,
-      message: success ? "Favorite status updated successfully." : "Deal not found or status already set.",
-      data: { success },
-    });
-  } catch (error) {
-    next(error);
-  }
-};

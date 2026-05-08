@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { formatPrice, apiBaseUrl, withBearerToken, type Deal } from "@/lib/deals";
 import { useAuth } from "@clerk/nextjs";
@@ -15,6 +15,10 @@ export function DealCard({ deal, onOpen, onFavoriteToggle }: DealCardProps) {
   const { getToken, userId } = useAuth();
   const [isFavorited, setIsFavorited] = useState(deal.isFavorited ?? false);
   const [isLoadingFav, setIsLoadingFav] = useState(false);
+
+  useEffect(() => {
+    setIsFavorited(deal.isFavorited ?? false);
+  }, [deal.isFavorited]);
 
   const handleDealClick = async (dealId: string) => {
     onOpen();
@@ -104,9 +108,16 @@ export function DealCard({ deal, onOpen, onFavoriteToggle }: DealCardProps) {
       "shadow-lg transition-all duration-500 ease-[cubic-bezier(.22,.68,0,1.2)]",
       "hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.1)]"
     )}>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => void handleDealClick(deal.dealId)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            void handleDealClick(deal.dealId);
+          }
+        }}
         className="flex h-full w-full flex-col text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       >
         {/* Image — hero focus, ~72% */}
@@ -197,7 +208,7 @@ export function DealCard({ deal, onOpen, onFavoriteToggle }: DealCardProps) {
             </div>
           </div>
         </div>
-      </button>
+      </div>
     </article>
   );
 }
