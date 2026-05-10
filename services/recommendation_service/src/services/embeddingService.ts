@@ -37,7 +37,7 @@ export type EmbedDealPayload = {
 
 export class EmbeddingService {
   async generateEmbedding(text: string): Promise<number[]> {
-    logger.debug("Generating embedding for text length", text.length);
+    logger.debug(`Generating embedding for text length ${text.length}`);
     const pipe = await getEmbeddingPipeline();
 
     const output = await (pipe as any)(text, {
@@ -49,7 +49,7 @@ export class EmbeddingService {
   }
 
   async embedAndStoreDeal(payload: EmbedDealPayload): Promise<void> {
-    logger.info("Embedding and storing deal", payload.dealId);
+    logger.info(`Embedding and storing deal ${payload.dealId}`);
     const embedding = await this.generateEmbedding(payload.text);
     const textHash = createHash("sha256").update(payload.text).digest("hex");
 
@@ -82,7 +82,7 @@ export class EmbeddingService {
       },
       { upsert: true }
     );
-    logger.debug("Stored embedding for deal", payload.dealId, "hash", textHash);
+    logger.debug(`Stored embedding for deal ${payload.dealId} hash ${textHash}`);
   }
 }
 

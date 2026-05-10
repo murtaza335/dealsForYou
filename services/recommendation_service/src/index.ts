@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import { connectDb } from "./config/db.js";
 import { startServer } from "./server.js";
-import { logger } from "./utils/logger.js";
 import "./models/dealEmbedding.model.js";
 import "./models/userEvent.model.js";
 import "./models/userProfile.mode.js";

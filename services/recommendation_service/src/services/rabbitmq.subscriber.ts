@@ -48,7 +48,7 @@ async function handleMessage(msg: ConsumeMessage) {
   const payload = JSON.parse(msg.content.toString()) as DealEventPayload;
   const { dealId, brandId, dealData } = payload;
 
-  logger.debug("Received deal event", payload.eventType, dealId);
+  logger.debug(`Received deal event ${payload.eventType} for ${dealId}`);
 
   const text = buildDealText(
     {
@@ -86,14 +86,16 @@ async function handleMessage(msg: ConsumeMessage) {
     locations: dealData.locations,
     text,
   });
-  logger.info("Processed deal embedding for", dealId);
+  logger.info(`Processed deal embedding for ${dealId}`);
 }
 
 async function handleAnalyticsMessage(msg: ConsumeMessage) {
   const payload = JSON.parse(msg.content.toString()) as AnalyticsEventPayload;
   const occurredAt = payload.occurredAt ? new Date(payload.occurredAt) : new Date();
 
-  logger.debug("Received analytics event", payload.action, payload.userId, payload.dealId);
+  logger.debug(
+    `Received analytics event ${payload.action} user ${payload.userId} deal ${payload.dealId ?? "none"}`
+  );
 
   await UserEventModel.create({
     userId: payload.userId,
@@ -117,7 +119,7 @@ async function handleAnalyticsMessage(msg: ConsumeMessage) {
     queryText: payload.queryText,
     occurredAt,
   });
-  logger.info("Processed analytics event", payload.action, payload.userId || "unknown");
+  logger.info(`Processed analytics event ${payload.action} user ${payload.userId || "unknown"}`);
 }
 
 export async function initRabbitMQSubscriber(): Promise<void> {
