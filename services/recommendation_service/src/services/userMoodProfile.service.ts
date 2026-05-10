@@ -59,12 +59,16 @@ async function resolveEventVector(payload: UpdateMoodProfilePayload): Promise<nu
 }
 
 export async function updateUserMoodProfile(payload: UpdateMoodProfilePayload): Promise<void> {
-  logger.debug("updateUserMoodProfile called", payload.userId, payload.sessionId, payload.action);
+  logger.debug(
+    `updateUserMoodProfile called user ${payload.userId} session ${payload.sessionId} action ${payload.action}`
+  );
   if (!payload.userId || !payload.sessionId) return;
 
   const vector = await resolveEventVector(payload);
   if (!vector) {
-    logger.debug("No vector resolved for payload", payload);
+    logger.debug(
+      `No vector resolved for payload user ${payload.userId} session ${payload.sessionId} action ${payload.action}`
+    );
     return;
   }
 
@@ -105,5 +109,5 @@ export async function updateUserMoodProfile(payload: UpdateMoodProfilePayload): 
     },
     { upsert: true }
   );
-  logger.debug("Updated mood profile for", payload.userId, payload.sessionId);
+  logger.debug(`Updated mood profile for user ${payload.userId} session ${payload.sessionId}`);
 }

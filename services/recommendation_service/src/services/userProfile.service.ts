@@ -24,11 +24,11 @@ function normalize(vector: number[]): number[] {
 }
 
 export async function rebuildUserProfile(userId: string) {
-  logger.debug("rebuildUserProfile called for", userId);
+  logger.debug(`rebuildUserProfile called for ${userId}`);
   const events = await UserEventModel.find({ userId }).sort({ occurredAt: -1 }).limit(100);
 
   if (!events.length) {
-    logger.info("rebuildUserProfile: cold start, no events for", userId);
+    logger.info(`rebuildUserProfile: cold start, no events for ${userId}`);
     return {
       coldStart: true,
       profileVector: null,
@@ -107,7 +107,7 @@ export async function rebuildUserProfile(userId: string) {
     { upsert: true }
   );
 
-  logger.info("rebuildUserProfile: computed profile for", userId, "confidence", confidenceScore);
+  logger.info(`rebuildUserProfile: computed profile for ${userId} confidence ${confidenceScore}`);
 
   return {
     coldStart: false,
